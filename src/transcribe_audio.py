@@ -4,24 +4,22 @@ Single-audio-file transcription script using faster-whisper.
 Stage 1 of GPT Course Knowledge Extractor.
 """
 
+from src.utils.paths import get_output_paths
+from src.utils.supported_formats import is_supported_audio_file
+from src.utils.timestamps import format_timestamp
 import argparse
 import sys
 from pathlib import Path
-from datetime import timedelta
+
+# Ensure the parent directory is in sys.path so that src.utils can be imported
+# when the script is run directly as a file.
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     from faster_whisper import WhisperModel
 except ImportError:
     print("Error: faster_whisper not installed. Run: pip install faster-whisper")
     sys.exit(1)
-
-
-def format_timestamp(seconds: float) -> str:
-    """Convert seconds to HH:MM:SS string."""
-    td = timedelta(seconds=seconds)
-    hours, remainder = divmod(td.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 def main():
@@ -53,24 +51,39 @@ def main():
         default="int8",
         help="Compute type for quantization (int8, float16, float32)",
     )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite existing output files. If not set, script will exit when outputs already exist.",
+    )
 
     args = parser.parse_args()
 
     audio_path = Path(args.audio_file).resolve()
+
+    # 1. Check file existence
     if not audio_path.exists():
         print(f"Error: File '{audio_path}' does not exist.")
         sys.exit(1)
 
-    # Prepare output directories
-    output_dir = Path("output")
-    transcripts_dir = output_dir / "transcripts"
-    markdown_dir = output_dir / "markdown"
-    transcripts_dir.mkdir(parents=True, exist_ok=True)
-    markdown_dir.mkdir(parents=True, exist_ok=True)
+    # 2. Check supported extension
+    if not is_supported_audio_file(audio_path):
+        print(f"Error: Unsupported file extension '{audio_path.suffix}'.")
+        print("Supported extensions: .mp3, .wav, .m4a, .flac, .ogg, .webm, .mp4, .mkv, .mov, .avi")
+        sys.exit(1)
 
-    stem = audio_path.stem
-    txt_path = transcripts_dir / f"{stem}.txt"
-    md_path = markdown_dir / f"{stem}.md"
+    # 3. Determine output paths
+    txt_path, md_path = get_output_paths(audio_path)
+
+    # 4. Check if outputs already exist (unless --overwrite)
+    if not args.overwrite and (txt_path.exists() or md_path.exists()):
+        print("Output files already exist:")
+        if txt_path.exists():
+            print(f"  - {txt_path}")
+        if md_path.exists():
+            print(f"  - {md_path}")
+        print("Use --overwrite to regenerate them.")
+        sys.exit(0)
 
     print(f"Loading model '{args.model}' on {args.device}...")
     try:

@@ -45,11 +45,31 @@ Optional arguments:
 - `--language` – Language code (`ru`, `en`, `auto`). Default: `ru`
 - `--device` – Inference device (`cpu`, `cuda`, `auto`). Default: `cpu`
 - `--compute-type` – Quantization type (`int8`, `float16`, `float32`). Default: `int8`
+- `--overwrite` – Overwrite existing output files (default: skip if outputs exist)
 
 Example with custom parameters:
 ```bash
 python src/transcribe_audio.py input/audio/lecture.wav --model medium --language en --device cpu --compute-type float16
 ```
+
+### Supported input formats
+
+The script accepts the following audio/video file extensions (via faster‑whisper/ffmpeg):
+
+- **Audio:** `.mp3`, `.wav`, `.m4a`, `.flac`, `.ogg`
+- **Video containers (audio stream will be extracted):** `.webm`, `.mp4`, `.mkv`, `.mov`, `.avi`
+
+If you provide a file with an unsupported extension, the script will print an error and exit.
+
+### Smoke test
+
+To quickly verify the installation and basic functionality, you can run:
+
+```bash
+python src/transcribe_audio.py input/audio/test.mp3 --overwrite
+```
+
+(Ensure you have a test file at that location, or create a short dummy audio file.)
 
 ### Output files
 
