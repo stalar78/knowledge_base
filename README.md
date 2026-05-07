@@ -106,11 +106,69 @@ Example markdown structure:
 [00:00:00 - 00:00:05] Hello, welcome to today's lecture...
 ```
 
+## Stage 2: Batch transcription
+
+This stage adds a batch‑processing script that transcribes all supported audio/video files in a folder (optionally recursively) with a single model load.
+
+### Running batch transcription
+
+You can run the batch script in the same two ways:
+
+**1. Direct script execution:**
+```bash
+python src/transcribe_batch.py input/audio
+```
+
+**2. Module execution (recommended):**
+```bash
+python -m src.transcribe_batch input/audio
+```
+
+### Additional options
+
+All options from the single‑file script are supported, plus:
+
+- `--recursive` – scan subfolders recursively (default: only top‑level folder)
+- `--overwrite` – overwrite existing output files (default: skip files that already have outputs)
+
+### Examples
+
+Transcribe all supported files in `input/audio` (non‑recursive):
+```bash
+python -m src.transcribe_batch input/audio
+```
+
+Scan recursively and overwrite any existing transcripts:
+```bash
+python -m src.transcribe_batch input/audio --recursive --overwrite
+```
+
+Use a larger model and English language:
+```bash
+python -m src.transcribe_batch input/audio --model medium --language en
+```
+
+### How it works
+
+1. The script scans the specified folder (and its subfolders if `--recursive` is used) for files with supported extensions (see Stage 1 for the list).
+2. The Whisper model is loaded **once** and reused for all files, which greatly speeds up processing.
+3. For each file:
+   - If output files already exist and `--overwrite` is not given, the file is skipped with a clear message.
+   - Otherwise, transcription is performed and plain‑text/markdown transcripts are saved to `output/transcripts/` and `output/markdown/` (same naming convention as Stage 1).
+4. A progress counter `[index/total]` is printed for each file.
+5. At the end, a summary shows how many files were processed, skipped, or failed.
+
+### Notes
+
+- The script uses the same helper functions (`ensure_output_dirs`, `get_output_paths`, `format_timestamp`, `is_supported_audio_file`) as the single‑file script, ensuring consistent output structure.
+- If a transcription fails for one file, the error is printed and the script continues with the next file.
+- If no supported files are found, the script exits with a clear message.
+
 ### Project status
 
-**Stage 1** – Single‑file transcription is implemented.  
+**Stage 1** – Single‑file transcription is implemented.
+**Stage 2** – Batch processing of multiple files is implemented.
 Planned stages (see `docs/ROADMAP.md`):
-- Stage 2: Batch processing of multiple files
 - Stage 3: Video‑to‑audio extraction
 - Stage 4: GPT‑based summarization & knowledge extraction
 - Stage 5: Interactive web interface
