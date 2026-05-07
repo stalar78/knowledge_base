@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Input media files (ignore contents, keep placeholder)
+input/audio/*
+!input/audio/.gitkeep
+input/video/*
+!input/video/.gitkeep
+
+# Output generated files (ignore contents, keep placeholder)
+output/*
+!output/.gitkeep
+!output/transcripts/.gitkeep
+!output/markdown/.gitkeep
+!output/reports/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Project-specific
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
