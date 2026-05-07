@@ -4,16 +4,18 @@ Single-audio-file transcription script using faster-whisper.
 Stage 1 of GPT Course Knowledge Extractor.
 """
 
-from src.utils.paths import get_output_paths
-from src.utils.supported_formats import is_supported_audio_file
+from src.utils.paths import ensure_output_dirs, get_output_paths
+from src.utils.supported_formats import is_supported_audio_file, SUPPORTED_AUDIO_EXTENSIONS
 from src.utils.timestamps import format_timestamp
 import argparse
 import sys
 from pathlib import Path
 
-# Ensure the parent directory is in sys.path so that src.utils can be imported
-# when the script is run directly as a file.
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add project root to sys.path before importing src.utils
+# This ensures both direct execution and module execution work.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     from faster_whisper import WhisperModel
@@ -69,13 +71,17 @@ def main():
     # 2. Check supported extension
     if not is_supported_audio_file(audio_path):
         print(f"Error: Unsupported file extension '{audio_path.suffix}'.")
-        print("Supported extensions: .mp3, .wav, .m4a, .flac, .ogg, .webm, .mp4, .mkv, .mov, .avi")
+        supported = ", ".join(sorted(SUPPORTED_AUDIO_EXTENSIONS))
+        print(f"Supported extensions: {supported}")
         sys.exit(1)
 
-    # 3. Determine output paths
+    # 3. Ensure output directories exist
+    ensure_output_dirs()
+
+    # 4. Determine output paths
     txt_path, md_path = get_output_paths(audio_path)
 
-    # 4. Check if outputs already exist (unless --overwrite)
+    # 5. Check if outputs already exist (unless --overwrite)
     if not args.overwrite and (txt_path.exists() or md_path.exists()):
         print("Output files already exist:")
         if txt_path.exists():

@@ -35,10 +35,19 @@ The folder structure is created automatically when you run the script for the fi
 
 ### Running the transcription script
 
-Basic usage:
+You can run the script in two equivalent ways:
+
+**1. Direct script execution** (traditional):
 ```bash
 python src/transcribe_audio.py input/audio/my_lecture.mp3
 ```
+
+**2. Module execution** (recommended, more robust):
+```bash
+python -m src.transcribe_audio input/audio/my_lecture.mp3
+```
+
+Both styles accept the same arguments.
 
 Optional arguments:
 - `--model` – Whisper model size (`tiny`, `base`, `small`, `medium`, `large‑v2`). Default: `small`
@@ -49,7 +58,7 @@ Optional arguments:
 
 Example with custom parameters:
 ```bash
-python src/transcribe_audio.py input/audio/lecture.wav --model medium --language en --device cpu --compute-type float16
+python -m src.transcribe_audio input/audio/lecture.wav --model medium --language en --device cpu --compute-type float16
 ```
 
 ### Supported input formats
