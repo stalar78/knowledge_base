@@ -4,19 +4,24 @@ Single-audio-file transcription script using faster-whisper.
 Stage 1 of GPT Course Knowledge Extractor.
 """
 
-from src.utils.timestamps import format_timestamp
-from src.utils.supported_formats import SUPPORTED_AUDIO_EXTENSIONS, is_supported_audio_file
-from src.utils.paths import ensure_output_dirs, get_output_paths
 import argparse
 import sys
 from pathlib import Path
 
-# Add project root to sys.path before importing src.utils
-# This ensures both direct execution and module execution work.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
+try:
+    from src.utils.paths import ensure_output_dirs, get_output_paths
+    from src.utils.supported_formats import (
+        SUPPORTED_AUDIO_EXTENSIONS,
+        is_supported_audio_file,
+    )
+    from src.utils.timestamps import format_timestamp
+except ModuleNotFoundError:
+    from utils.paths import ensure_output_dirs, get_output_paths
+    from utils.supported_formats import (
+        SUPPORTED_AUDIO_EXTENSIONS,
+        is_supported_audio_file,
+    )
+    from utils.timestamps import format_timestamp
 
 try:
     from faster_whisper import WhisperModel
