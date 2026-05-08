@@ -163,6 +163,7 @@ python -m src.transcribe_batch input/audio --model medium --language en
 - The script uses the same helper functions (`ensure_output_dirs`, `get_output_paths`, `format_timestamp`, `is_supported_audio_file`) as the single‑file script, ensuring consistent output structure.
 - If a transcription fails for one file, the error is printed and the script continues with the next file.
 - If no supported files are found, the script exits with a clear message.
+- The transcription logic is shared between the single‑file and batch scripts via `src/transcription_engine.py`.
 
 ### Project status
 

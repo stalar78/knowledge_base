@@ -12,19 +12,15 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
-    from src.utils.paths import ensure_output_dirs, get_output_paths
     from src.utils.supported_formats import (
         SUPPORTED_AUDIO_EXTENSIONS,
         is_supported_audio_file,
     )
-    from src.utils.timestamps import format_timestamp
 except ModuleNotFoundError:
-    from utils.paths import ensure_output_dirs, get_output_paths
     from utils.supported_formats import (
         SUPPORTED_AUDIO_EXTENSIONS,
         is_supported_audio_file,
     )
-    from utils.timestamps import format_timestamp
 
 try:
     from faster_whisper import WhisperModel
@@ -32,71 +28,10 @@ except ImportError:
     print("Error: faster_whisper not installed. Run: pip install faster-whisper")
     sys.exit(1)
 
-
-def transcribe_single(audio_path, model, args):
-    """
-    Transcribe a single audio file using an already loaded WhisperModel.
-    Returns True on success, False on failure.
-    """
-    # 1. Ensure output directories exist
-    ensure_output_dirs()
-
-    # 2. Determine output paths
-    txt_path, md_path = get_output_paths(audio_path)
-
-    # 3. Check if outputs already exist (unless --overwrite)
-    if not args.overwrite and (txt_path.exists() or md_path.exists()):
-        print(
-            f"  Skipping {audio_path.name}: output already exists. Use --overwrite to regenerate.")
-        return None  # special value to indicate skipped
-
-    print(f"  Transcribing '{audio_path.name}'...")
-    try:
-        segments, info = model.transcribe(
-            str(audio_path),
-            language=args.language if args.language != "auto" else None,
-            beam_size=5,
-            vad_filter=True,
-        )
-    except Exception as e:
-        print(f"  Transcription failed: {e}")
-        return False
-
-    # Collect segments
-    segment_list = []
-    for seg in segments:
-        start_fmt = format_timestamp(seg.start)
-        end_fmt = format_timestamp(seg.end)
-        line = f"[{start_fmt} - {end_fmt}] {seg.text.strip()}"
-        segment_list.append((seg.start, seg.end, seg.text.strip(), line))
-
-    # Write plain text transcript
-    with open(txt_path, "w", encoding="utf-8") as f:
-        f.write(f"Transcript of: {audio_path.name}\n")
-        f.write(f"Language: {info.language}\n")
-        f.write(f"Duration: {info.duration:.2f} seconds\n")
-        f.write("=" * 50 + "\n")
-        for _, _, _, line in segment_list:
-            f.write(line + "\n")
-
-    # Write markdown transcript
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(f"# Transcript: {audio_path.name}\n\n")
-        f.write("## Metadata\n\n")
-        f.write(f"- Source file: `{audio_path}`\n")
-        f.write(f"- Language: `{info.language}`\n")
-        f.write(f"- Duration: `{info.duration:.2f}` seconds\n")
-        f.write(f"- Model: `{args.model}`\n")
-        f.write(f"- Device: `{args.device}`\n")
-        f.write(f"- Compute type: `{args.compute_type}`\n")
-        f.write(
-            f"- Detected language probability: `{info.language_probability:.2f}`\n\n")
-        f.write("## Transcript\n\n")
-        for _, _, text, line in segment_list:
-            f.write(line + "\n\n")
-
-    print(f"    Saved: {txt_path.name}, {md_path.name}")
-    return True
+try:
+    from src.transcription_engine import transcribe_file
+except ModuleNotFoundError:
+    from transcription_engine import transcribe_file
 
 
 def main():
@@ -191,12 +126,21 @@ def main():
 
     for idx, audio_path in enumerate(supported_files, start=1):
         print(f"[{idx}/{len(supported_files)}] {audio_path.name}")
-        result = transcribe_single(audio_path, model, args)
-        if result is None:
-            skipped += 1
-        elif result is True:
+        status = transcribe_file(
+            audio_path=audio_path,
+            model=model,
+            model_name=args.model,
+            language=args.language,
+            device=args.device,
+            compute_type=args.compute_type,
+            overwrite=args.overwrite,
+            print_segments=False,  # avoid flooding console in batch mode
+        )
+        if status == "processed":
             processed += 1
-        else:
+        elif status == "skipped":
+            skipped += 1
+        else:  # failed
             failed += 1
         print()  # empty line for readability
 
