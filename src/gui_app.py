@@ -13,7 +13,7 @@ import threading
 import webbrowser
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, font, messagebox, scrolledtext, simpledialog, ttk
+from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
 
 class CourseGUI:
@@ -26,14 +26,17 @@ class CourseGUI:
         self.course_slug_var = tk.StringVar()
         self.progress_var = tk.IntVar(value=0)
         self.command_running = False
-        self.action_buttons = []
+        self.action_buttons: list[ttk.Button] = []
+
+        self.main_frame = ttk.Frame(self.root)
+        self.footer_frame = ttk.Frame(self.root)
 
         self._create_widgets()
         self._layout_widgets()
-        self.set_progress(0)
+        self.set_progress_idle()
 
     def _create_widgets(self) -> None:
-        self.frame_course = ttk.LabelFrame(self.root, text="Выбор курса", padding=10)
+        self.frame_course = ttk.LabelFrame(self.main_frame, text="Выбор курса", padding=10)
         ttk.Label(self.frame_course, text="Код курса:").grid(row=0, column=0, sticky="w")
 
         self.entry_slug = ttk.Entry(self.frame_course, textvariable=self.course_slug_var, width=30)
@@ -45,17 +48,21 @@ class CourseGUI:
         self.btn_refresh = ttk.Button(self.frame_course, text="Обновить статус", command=self.refresh_status)
         self.btn_refresh.grid(row=0, column=3, padx=5)
 
-        self.btn_open_folder = ttk.Button(self.frame_course, text="Открыть папку курса", command=self.open_course_folder)
+        self.btn_open_folder = ttk.Button(
+            self.frame_course,
+            text="Открыть папку курса",
+            command=self.open_course_folder,
+        )
         self.btn_open_folder.grid(row=0, column=4, padx=5)
 
         self.btn_help = ttk.Button(self.frame_course, text="Инструкция", command=self.show_instructions)
         self.btn_help.grid(row=0, column=5, padx=5)
 
-        self.frame_status = ttk.LabelFrame(self.root, text="Статус курса", padding=10)
+        self.frame_status = ttk.LabelFrame(self.main_frame, text="Статус курса", padding=10)
         self.status_text = scrolledtext.ScrolledText(self.frame_status, height=8, width=80, state="disabled")
         self.status_text.pack(fill="both", expand=True)
 
-        self.frame_actions = ttk.LabelFrame(self.root, text="Действия", padding=10)
+        self.frame_actions = ttk.LabelFrame(self.main_frame, text="Действия", padding=10)
         self.btn_transcribe = ttk.Button(self.frame_actions, text="Транскрибировать", command=self.transcribe)
         self.btn_transcribe.grid(row=0, column=0, padx=5, pady=5)
 
@@ -71,7 +78,7 @@ class CourseGUI:
         self.btn_import_summary = ttk.Button(self.frame_actions, text="Импорт summary", command=self.import_summary)
         self.btn_import_summary.grid(row=0, column=4, padx=5, pady=5)
 
-        self.frame_progress = ttk.LabelFrame(self.root, text="Прогресс", padding=10)
+        self.frame_progress = ttk.LabelFrame(self.main_frame, text="Прогресс", padding=10)
         self.progress_label = ttk.Label(self.frame_progress, text="Прогресс: 0%")
         self.progress_label.pack(anchor="w", pady=(0, 4))
         self.progress_bar = ttk.Progressbar(
@@ -82,23 +89,19 @@ class CourseGUI:
         )
         self.progress_bar.pack(fill="x")
 
-        self.frame_log = ttk.LabelFrame(self.root, text="Лог / вывод", padding=10)
+        self.frame_log = ttk.LabelFrame(self.main_frame, text="Лог / вывод", padding=10)
         self.log_text = scrolledtext.ScrolledText(self.frame_log, height=14, width=80)
         self.log_text.pack(fill="both", expand=True)
 
-        self.frame_footer = ttk.Frame(self.root)
-        footer_base_font = font.nametofont("TkDefaultFont")
-        self.footer_font = footer_base_font.copy()
-        self.footer_font.configure(underline=True)
-        self.footer_link = tk.Label(
-            self.frame_footer,
-            text="by StalarVisison",
-            fg="blue",
+        self.footer_label = tk.Label(
+            self.footer_frame,
+            text="by StalarVision",
+            fg="#1a0dab",
             cursor="hand2",
-            font=self.footer_font,
+            font=("TkDefaultFont", 9, "underline"),
         )
-        self.footer_link.pack(side="right")
-        self.footer_link.bind("<Button-1>", self.open_footer_link)
+        self.footer_label.pack(side="right")
+        self.footer_label.bind("<Button-1>", lambda event: webbrowser.open("https://stalarvision.ru/"))
 
         self.action_buttons = [
             self.btn_create,
@@ -113,15 +116,14 @@ class CourseGUI:
         ]
 
     def _layout_widgets(self) -> None:
+        self.footer_frame.pack(side="bottom", fill="x", padx=10, pady=(0, 6))
+        self.main_frame.pack(side="top", fill="both", expand=True)
+
         self.frame_course.pack(fill="x", padx=10, pady=10)
         self.frame_status.pack(fill="both", padx=10, pady=(0, 10), expand=True)
         self.frame_actions.pack(fill="x", padx=10, pady=(0, 10))
         self.frame_progress.pack(fill="x", padx=10, pady=(0, 10))
         self.frame_log.pack(fill="both", padx=10, pady=(0, 8), expand=True)
-        self.frame_footer.pack(fill="x", side="bottom", padx=10, pady=(0, 5))
-
-    def open_footer_link(self, _event=None) -> None:
-        webbrowser.open("https://stalarvision.ru/")
 
     def show_instructions(self) -> None:
         instructions = (
@@ -143,10 +145,29 @@ class CourseGUI:
         for button in self.action_buttons:
             button.configure(state=state)
 
-    def set_progress(self, value: int) -> None:
-        safe_value = max(0, min(100, int(value)))
-        self.progress_var.set(safe_value)
-        self.progress_label.configure(text=f"Прогресс: {safe_value}%")
+    def set_progress_idle(self) -> None:
+        self.progress_bar.stop()
+        self.progress_bar.configure(mode="determinate")
+        self.progress_var.set(0)
+        self.progress_label.configure(text="Прогресс: 0%")
+
+    def set_progress_running(self) -> None:
+        self.progress_var.set(0)
+        self.progress_bar.configure(mode="indeterminate")
+        self.progress_bar.start(10)
+        self.progress_label.configure(text="Прогресс: выполняется...")
+
+    def set_progress_success(self) -> None:
+        self.progress_bar.stop()
+        self.progress_bar.configure(mode="determinate")
+        self.progress_var.set(100)
+        self.progress_label.configure(text="Прогресс: 100%")
+
+    def set_progress_error(self) -> None:
+        self.progress_bar.stop()
+        self.progress_bar.configure(mode="determinate")
+        self.progress_var.set(0)
+        self.progress_label.configure(text="Прогресс: ошибка")
 
     def log(self, message: str) -> None:
         self.log_text.insert(tk.END, message + "\n")
@@ -163,20 +184,24 @@ class CourseGUI:
         self.status_text.see(tk.END)
         self.status_text.configure(state="disabled")
 
-    def get_slug(self):
+    def get_slug(self) -> str | None:
         slug = self.course_slug_var.get().strip()
         if not slug:
             messagebox.showwarning("Не указан код курса", "Введите код курса.")
             return None
         return slug
 
-    def prepare_action(self, start_message: str) -> bool:
+    def prepare_action(self, start_message: str, is_transcribe: bool = False) -> bool:
         if self.command_running:
             messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
             return False
+
         self.clear_log()
-        self.set_progress(0)
+        self.set_progress_idle()
         self.log(start_message)
+        self.log("[Запуск] Команда выполняется. Для длинных аудио это может занять много времени.")
+        if is_transcribe:
+            self.log("[Важно] Транскрибация длинного файла на CPU может занять 20-60 минут.")
         return True
 
     def run_command_async(
@@ -192,10 +217,8 @@ class CourseGUI:
 
         self.command_running = True
         self.set_actions_enabled(False)
-        self.set_progress(10)
-        command_line = " ".join(args)
-        self.log(f"[Команда] {command_line}")
-        self.set_progress(50)
+        self.log(f"[Команда] {' '.join(args)}")
+        self.set_progress_running()
 
         def worker() -> None:
             try:
@@ -255,17 +278,15 @@ class CourseGUI:
             self.log(f"[Ошибка] Не удалось запустить команду: {error}")
 
         success = (return_code == 0) and (error is None)
-        self.set_progress(100)
-
         if success:
+            self.set_progress_success()
             self.log("[Готово] Команда выполнена успешно.")
             if update_status:
                 self._set_status_text(stdout or "Статус курса обновлен.")
             messagebox.showinfo("Готово", on_success_message)
         else:
+            self.set_progress_error()
             self.log("[Ошибка] Команда завершилась с ошибкой.")
-            if return_code is None:
-                self.set_progress(0)
             messagebox.showerror("Ошибка", on_fail_message)
 
         self.command_running = False
@@ -275,6 +296,7 @@ class CourseGUI:
         slug = self.get_slug()
         if not slug:
             return
+
         title = simpledialog.askstring("Создать курс", "Введите название курса (необязательно):", initialvalue=slug)
         if title is None:
             return
@@ -312,7 +334,7 @@ class CourseGUI:
             return
 
         self.clear_log()
-        self.set_progress(0)
+        self.set_progress_idle()
         self.log("Открытие папки курса...")
 
         folder = Path("courses") / slug
@@ -323,10 +345,10 @@ class CourseGUI:
 
         try:
             os.startfile(str(folder.resolve()))
-            self.set_progress(100)
+            self.set_progress_success()
             self.log(f"[Готово] Папка открыта: {folder}")
         except Exception as exc:
-            self.set_progress(0)
+            self.set_progress_error()
             self.log(f"[Ошибка] Не удалось открыть папку: {exc}")
             messagebox.showerror("Ошибка", "Не удалось открыть папку курса.")
 
@@ -335,7 +357,7 @@ class CourseGUI:
         if not slug:
             return
 
-        if not self.prepare_action("Запуск транскрибации курса..."):
+        if not self.prepare_action("Запуск транскрибации курса...", is_transcribe=True):
             return
 
         args = [sys.executable, "-m", "src.course_transcribe", slug, "--overwrite"]
