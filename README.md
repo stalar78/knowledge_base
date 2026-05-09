@@ -829,6 +829,79 @@ python -m src.course_workflow_status python_backend_course
 - The underlying scripts have been extended where necessary (e.g., `transcription_engine` now supports custom output directories) without breaking existing global usage.
 - Manual ChatGPT summary import still uses the original `import_manual_summary` command because it is a per‑file operation that depends on user‑provided answer files.
 
+### Stage 5.3: Console app launcher
+
+This stage adds a simple interactive console menu that calls the existing scripts, making the project easier to use without remembering long terminal commands.
+
+#### Purpose
+
+Provide a beginner‑friendly interface that guides the user through the most common workflow steps. The launcher does **not** call the OpenAI API by itself; it merely runs the underlying Python modules as subprocesses.
+
+#### Usage
+
+```bash
+python -m src.app_launcher
+```
+
+or
+
+```bash
+python src/app_launcher.py
+```
+
+#### Menu options
+
+1. **Create new course workspace** – asks for slug, optional title, and whether to overwrite README.
+2. **Show course workflow status** – shows file counts and suggests the next step.
+3. **Transcribe course** – transcribes audio/video files in the course's `input/audio` folder.
+4. **Clean course transcripts** – cleans raw transcripts using the glossary replacements.
+5. **Export ChatGPT prompts** – exports ready‑to‑copy ChatGPT prompts from cleaned transcripts.
+6. **Import manual ChatGPT summary** – imports a manually created ChatGPT answer file.
+7. **Build summary index** – builds a local index from imported GPT summaries.
+8. **Exit** – exits the launcher.
+
+#### Behavior
+
+- The launcher runs in a loop until the user chooses Exit.
+- For each action, it asks the required inputs interactively.
+- It prints the exact command that will be executed (using `sys.executable`).
+- It waits for the command to finish and reports success/failure.
+- After each action, the user is returned to the main menu.
+
+#### Example session
+
+```
+==================================================
+GPT Course Knowledge Extractor – Console Launcher
+==================================================
+1. Create new course workspace
+2. Show course workflow status
+3. Transcribe course
+4. Clean course transcripts
+5. Export ChatGPT prompts
+6. Import manual ChatGPT summary
+7. Build summary index
+8. Exit
+==================================================
+Choose an option (1‑8): 1
+
+--- Create new course workspace ---
+Course slug (lowercase letters, numbers, hyphens, underscores): my_course
+Optional human-readable title [My Course]: My First Course
+Overwrite existing README.md? [y/N]: n
+
+>>> C:\Users\...\python.exe -m src.create_course_workspace my_course --title "My First Course"
+
+Course workspace created successfully.
+```
+
+#### Notes
+
+- The launcher is a stepping stone before a Windows GUI / .exe wrapper.
+- It does **not** call the OpenAI API and does not require an API key.
+- All underlying scripts are called as subprocesses, ensuring the same behavior as manual execution.
+- The launcher is intentionally kept simple; advanced users can still use the direct commands.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -843,6 +916,7 @@ python -m src.course_workflow_status python_backend_course
 **Stage 5.0** – Course workspaces are implemented.
 **Stage 5.1** – Course workflow status is implemented.
 **Stage 5.2** – Course‑aware workflow wrappers are implemented.
+**Stage 5.3** – Console app launcher is implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
