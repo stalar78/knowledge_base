@@ -701,6 +701,75 @@ python -m src.build_summary_index courses/python_backend_course/output/gpt_summa
 - The workspace initializer does **not** delete or overwrite existing course folders; it only creates missing directories and files.
 - Generated course data (audio, video, output files) is ignored by Git; configuration and README are kept.
 
+### Stage 5.1: Course workflow status
+
+This stage adds a helper that inspects a course workspace, counts files at each workflow stage, and suggests the next step with a ready‑to‑run command.
+
+#### Purpose
+
+When you have multiple courses, it's easy to lose track of which stage a particular course is at. This script provides a quick overview and tells you what to do next.
+
+#### Requirements
+
+- No `.env` or `OPENAI_API_KEY` required.
+- An existing course workspace (created with Stage 5.0).
+
+#### Usage
+
+```bash
+python -m src.course_workflow_status test_course
+```
+
+Optional argument:
+- `--courses-dir` – directory containing course workspaces (default: `courses`).
+
+#### Output example
+
+```
+============================================================
+Course Workflow Status
+============================================================
+Course: Test Course
+Slug:   test_course
+Path:   courses/test_course
+
+Files:
+  Input audio:           0
+  Input video:           0
+  Raw transcripts:       0
+  Transcript markdown:   0
+  Cleaned transcripts:   0
+  Cleaned markdown:      0
+  GPT prompts:           0
+  GPT summaries:         0
+  Reports:               0
+
+Next suggested step:
+  Add audio/video files
+
+Suggested command:
+  Place audio/video files into courses/test_course/input/audio/ or courses/test_course/input/video/
+============================================================
+```
+
+#### Logic
+
+The script counts only real generated/input files (ignores `.gitkeep`) and follows a deterministic workflow:
+
+1. If no audio/video files exist → suggests adding media.
+2. If no raw transcripts exist → suggests running `transcribe_batch`.
+3. If no cleaned transcripts exist → suggests running `cleanup_transcript`.
+4. If no GPT prompts exist → suggests running `gpt_prompt_batch_export`.
+5. If no GPT summaries exist → suggests importing manual ChatGPT answers.
+6. If summary index files are missing → suggests running `build_summary_index`.
+7. Otherwise → indicates the workspace is ready for course‑level analysis.
+
+#### Notes
+
+- This stage **does not call the OpenAI API** and does not require an API key.
+- The script only inspects files; it does not modify, delete, or create anything.
+- It validates that the course workspace and its `course_config.json` exist.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -713,6 +782,7 @@ python -m src.build_summary_index courses/python_backend_course/output/gpt_summa
 **Stage 4.3** – Manual summary import is implemented.
 **Stage 4.4** – Summary index is implemented.
 **Stage 5.0** – Course workspaces are implemented.
+**Stage 5.1** – Course workflow status is implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
