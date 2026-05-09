@@ -40,31 +40,26 @@ def load_replacements(glossary_path: Path) -> dict:
         sys.exit(1)
 
 
-def apply_replacements(text: str, replacements: dict) -> tuple[str, int]:
+def apply_replacements(text: str, replacements: dict) -> tuple[str, int, dict]:
     """
     Apply all replacements to the text.
-    Returns (cleaned_text, replacement_count).
+    Returns (cleaned_text, replacement_count, replacement_details).
+    replacement_details is a dict: {"old -> new": count, ...}
     """
-    count = 0
     cleaned = text
+    details = {}
+    total = 0
     # Process replacements in order of decreasing key length to avoid overlapping issues
     for old, new in sorted(replacements.items(), key=lambda kv: -len(kv[0])):
         if old in cleaned:
-            # Simple replace (case‑sensitive)
-            cleaned = cleaned.replace(old, new)
-            # approximate; better to count before/after?
-            count += cleaned.count(new)
-    # More accurate counting: count occurrences before replacement
-    # We'll implement a simple count per key
-    count = 0
-    cleaned = text
-    for old, new in sorted(replacements.items(), key=lambda kv: -len(kv[0])):
-        if old in cleaned:
-            # Count occurrences
+            # Count occurrences before replacement
             occurrences = cleaned.count(old)
-            cleaned = cleaned.replace(old, new)
-            count += occurrences
-    return cleaned, count
+            if occurrences > 0:
+                cleaned = cleaned.replace(old, new)
+                key = f"{old} -> {new}"
+                details[key] = occurrences
+                total += occurrences
+    return cleaned, total, details
 
 
 def clean_single_file(
@@ -74,12 +69,13 @@ def clean_single_file(
     markdown_output_dir: Path,
     overwrite: bool,
     glossary_path: Path,
-) -> tuple[str, int]:
+) -> tuple[str, int, dict]:
     """
     Clean a single transcript file.
-    Returns (status, replacement_count).
+    Returns (status, replacement_count, replacement_details).
     status is "processed", "skipped", or "failed".
     replacement_count is zero for skipped/failed.
+    replacement_details is empty dict for skipped/failed.
     """
     # Determine output paths
     stem = input_path.stem
@@ -90,7 +86,7 @@ def clean_single_file(
     if not overwrite and (txt_out.exists() or md_out.exists()):
         print(
             f"  Skipping {input_path.name}: cleaned output already exists. Use --overwrite to regenerate.")
-        return ("skipped", 0)
+        return ("skipped", 0, {})
 
     # Read input
     try:
@@ -98,10 +94,10 @@ def clean_single_file(
             original = f.read()
     except Exception as e:
         print(f"  Failed to read {input_path}: {e}")
-        return ("failed", 0)
+        return ("failed", 0, {})
 
     # Apply replacements
-    cleaned, count = apply_replacements(original, replacements)
+    cleaned, count, details = apply_replacements(original, replacements)
 
     # Write cleaned plain text
     try:
@@ -109,7 +105,7 @@ def clean_single_file(
             f.write(cleaned)
     except Exception as e:
         print(f"  Failed to write cleaned text to {txt_out}: {e}")
-        return ("failed", 0)
+        return ("failed", 0, {})
 
     # Write cleaned markdown
     try:
@@ -123,10 +119,10 @@ def clean_single_file(
             f.write(cleaned)
     except Exception as e:
         print(f"  Failed to write cleaned markdown to {md_out}: {e}")
-        return ("failed", 0)
+        return ("failed", 0, {})
 
     print(f"  Processed {input_path.name}: {count} replacement(s)")
-    return ("processed", count)
+    return ("processed", count, details)
 
 
 def main():
@@ -213,10 +209,12 @@ def main():
     skipped = 0
     failed = 0
     total_replacements = 0
+    file_reports = []
+    global_replacements = {}
 
     for idx, file_path in enumerate(files_to_process, start=1):
         print(f"[{idx}/{len(files_to_process)}] {file_path.name}")
-        status, replacement_count = clean_single_file(
+        status, replacement_count, replacement_details = clean_single_file(
             file_path,
             replacements,
             output_dir,
@@ -227,11 +225,80 @@ def main():
         if status == "processed":
             processed += 1
             total_replacements += replacement_count
+            # Accumulate global replacements
+            for key, count in replacement_details.items():
+                global_replacements[key] = global_replacements.get(
+                    key, 0) + count
+            # Store file report
+            file_reports.append({
+                "file": file_path.name,
+                "status": status,
+                "replacement_count": replacement_count,
+                "replacements": replacement_details,
+            })
         elif status == "skipped":
             skipped += 1
+            file_reports.append({
+                "file": file_path.name,
+                "status": status,
+                "replacement_count": 0,
+                "replacements": {},
+            })
         else:
             failed += 1
+            file_reports.append({
+                "file": file_path.name,
+                "status": status,
+                "replacement_count": 0,
+                "replacements": {},
+            })
         print()  # empty line for readability
+
+    # Ensure output/reports/ directory exists
+    reports_dir = Path("output/reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate JSON report
+    json_report = {
+        "processed": processed,
+        "skipped": skipped,
+        "failed": failed,
+        "total_replacements": total_replacements,
+        "files": file_reports,
+        "global_replacements": global_replacements,
+    }
+    json_path = reports_dir / "cleanup_report.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(json_report, f, ensure_ascii=False, indent=2)
+
+    # Generate Markdown report
+    md_path = reports_dir / "cleanup_report.md"
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write("# Cleanup Report\n\n")
+        f.write("## Summary\n\n")
+        f.write(f"- Processed: {processed}\n")
+        f.write(f"- Skipped: {skipped}\n")
+        f.write(f"- Failed: {failed}\n")
+        f.write(f"- Total replacements: {total_replacements}\n\n")
+        f.write("## Global replacements\n\n")
+        if global_replacements:
+            f.write("| Replacement | Count |\n")
+            f.write("|---|---:|\n")
+            for key, count in sorted(global_replacements.items()):
+                f.write(f"| {key} | {count} |\n")
+        else:
+            f.write("No replacements applied.\n")
+        f.write("\n## Files\n\n")
+        for report in file_reports:
+            f.write(f"### {report['file']}\n\n")
+            f.write(f"- Status: {report['status']}\n")
+            f.write(f"- Replacements: {report['replacement_count']}\n")
+            if report['replacements']:
+                f.write("\n| Replacement | Count |\n")
+                f.write("|---|---:|\n")
+                for key, count in sorted(report['replacements'].items()):
+                    f.write(f"| {key} | {count} |\n")
+            f.write("\n")
 
     # Final summary
     print("=" * 50)
@@ -240,6 +307,9 @@ def main():
     print(f"  Skipped:   {skipped}")
     print(f"  Failed:    {failed}")
     print(f"  Total replacements: {total_replacements}")
+    print(f"Reports saved:")
+    print(f"  {json_path}")
+    print(f"  {md_path}")
     if failed > 0:
         sys.exit(1)
     else:

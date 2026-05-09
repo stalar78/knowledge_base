@@ -220,6 +220,60 @@ python -m src.cleanup_transcript output/transcripts --recursive --overwrite
 4. A progress counter `[index/total]` is printed for each file.
 5. At the end, a summary shows how many files were processed, skipped, or failed.
 
+### Audit reports
+
+Starting from Stage 3.1, the cleanup script generates detailed audit reports in JSON and Markdown formats. These reports track exactly which replacements were applied, how many times each replacement occurred, and provide a file‑by‑file breakdown.
+
+#### Report location
+
+After each run, two report files are created in `output/reports/`:
+
+- `cleanup_report.json` – structured JSON with full statistics and replacement details.
+- `cleanup_report.md` – human‑readable Markdown summary with tables.
+
+#### JSON report structure
+
+```json
+{
+  "processed": 2,
+  "skipped": 0,
+  "failed": 0,
+  "total_replacements": 8,
+  "files": [
+    {
+      "input": "output/transcripts/test1.txt",
+      "status": "processed",
+      "replacements": 4,
+      "details": {"джипити -> GPT": 2, "ВПМ -> VPN": 2}
+    }
+  ],
+  "global_replacements": {"джипити -> GPT": 4, "ВПМ -> VPN": 4}
+}
+```
+
+#### Markdown report contents
+
+The Markdown report includes:
+
+- **Summary table** – counts of processed, skipped, failed files and total replacements.
+- **File‑level table** – each file’s status, replacement count, and a link to the cleaned output.
+- **Global replacements table** – aggregated counts of each replacement across all files.
+- **Execution details** – timestamp, glossary path, command‑line arguments.
+
+#### How to view reports
+
+You can open the reports directly after a cleanup run:
+
+```bash
+# View JSON report (requires jq for pretty‑printing)
+jq . output/reports/cleanup_report.json
+
+# View Markdown report
+cat output/reports/cleanup_report.md
+```
+
+Reports are overwritten on each script run. If you need to keep historical reports, move or rename them manually.
+
 ### Notes
 
 - The glossary is a simple JSON object `{"mis‑transcribed": "correct", …}`. You can edit it at any time.
