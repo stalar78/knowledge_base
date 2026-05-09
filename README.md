@@ -411,6 +411,55 @@ The file contains a complete ChatGPT prompt that includes the transcript and ask
 - The generated prompts are ignored by Git (see `.gitignore`).
 - You can reuse the same prompt with different ChatGPT models (GPT‑3.5, GPT‑4, etc.).
 
+### Stage 4.2: Batch manual prompt export
+
+This stage adds a batch‑processing script that exports ready‑to‑copy ChatGPT prompts for **all** cleaned transcript files in a folder (optionally recursively). It is the batch counterpart of Stage 4.1‑manual.
+
+#### Requirements
+
+- No `.env` or `OPENAI_API_KEY` required.
+- A folder containing cleaned transcript `.txt` files (e.g., `output/cleaned/`).
+
+#### Usage
+
+```bash
+python -m src.gpt_prompt_batch_export output/cleaned --overwrite
+```
+
+Optional arguments:
+- `--output-dir` – directory where prompt markdown files will be saved (default: `output/gpt_prompts/`).
+- `--recursive` – search for `.txt` files recursively in subfolders.
+- `--overwrite` – overwrite existing prompt files (default: skip if exists).
+
+Recursive example:
+```bash
+python -m src.gpt_prompt_batch_export output/cleaned --recursive --overwrite
+```
+
+#### Output
+
+For each `.txt` file found, the script creates a markdown prompt file in `output/gpt_prompts/` with the suffix `_prompt.md`, e.g.:
+
+```
+output/gpt_prompts/lesson_01_prompt.md
+output/gpt_prompts/lesson_02_prompt.md
+```
+
+Each file contains a complete ChatGPT prompt that includes the transcript and asks for the same six‑section summary as the API version.
+
+#### Reporting
+
+The script prints:
+- Number of discovered transcript files.
+- Progress: `[1/5] Exported prompt for lesson_01.txt`
+- Final summary: exported, skipped, and failed counts.
+
+#### Notes
+
+- This mode **does not call the OpenAI API** and does not require an API key.
+- The generated prompts are ignored by Git (see `.gitignore`).
+- You can reuse the same prompts with different ChatGPT models (GPT‑3.5, GPT‑4, etc.).
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -419,6 +468,7 @@ The file contains a complete ChatGPT prompt that includes the transcript and ask
 **Stage 4.0** – OpenAI configuration layer is implemented.
 **Stage 4.1** – GPT‑based summarization for a single transcript is implemented.
 **Stage 4.1‑manual** – ChatGPT prompt export for manual summarization is implemented.
+**Stage 4.2** – Batch manual prompt export is implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
