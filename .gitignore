@@ -18,18 +18,36 @@ venv.bak/
 .env.test.local
 .env.production.local
 
-# Input media files (ignore contents, keep placeholder)
+# Input media files
 input/audio/*
 !input/audio/.gitkeep
 input/video/*
 !input/video/.gitkeep
 
-# Output generated files (ignore contents, keep placeholder)
+# Output generated files
 output/*
 !output/.gitkeep
+
+output/transcripts/*
 !output/transcripts/.gitkeep
+
+output/markdown/*
 !output/markdown/.gitkeep
+
+output/cleaned/*
+!output/cleaned/.gitkeep
+
+output/cleaned_markdown/*
+!output/cleaned_markdown/.gitkeep
+
+output/reports/*
 !output/reports/.gitkeep
+
+output/gpt_prompts/*
+!output/gpt_prompts/.gitkeep
+
+output/gpt_summaries/*
+!output/gpt_summaries/.gitkeep
 
 # IDE
 .vscode/
@@ -54,16 +72,4 @@ logs/
 dist/
 build/
 .coverage
-htmlcov/# test 
- 
-output/cleaned/* 
-"output/cleaned/*" 
-"!output/cleaned/.gitkeep" 
-"output/cleaned_markdown/*" 
-"!output/cleaned_markdown/.gitkeep" 
-"output/gpt_prompts/*" 
-"!output/gpt_prompts/.gitkeep" 
-"output/gpt_summaries/*" 
-"!output/gpt_summaries/.gitkeep" 
-"output/reports/*" 
-"!output/reports/.gitkeep" 
+htmlcov/
