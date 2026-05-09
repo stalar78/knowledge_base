@@ -957,6 +957,60 @@ python -m src.app_launcher
 - The launcher still works exactly as described in Stage 5.3.
 - Advanced users can continue to use the direct Python commands.
 
+### Stage 6.0: Desktop GUI prototype
+
+This stage adds a first Windows‑friendly desktop GUI prototype using Tkinter. It provides a graphical application window that wraps the existing course commands, making the tool more accessible to users who prefer a point‑and‑click interface.
+
+#### Purpose
+Replace the terminal‑only menu with a normal desktop window that retains the same functionality without calling the OpenAI API.
+
+#### Features
+- **Course selection** – enter a course slug, create a new course, refresh its status, open its folder in Windows Explorer.
+- **Action buttons** – run the core workflow steps (transcribe, cleanup, export prompts, build index, import manual summary) with a single click.
+- **Log area** – shows the exact commands being executed and their output.
+- **Error handling** – warns about missing slugs, shows subprocess errors, and keeps the GUI responsive.
+
+#### Usage
+
+**Run via Python module** (recommended):
+```bash
+python -m src.gui_app
+```
+
+**Run via batch file** (Windows):
+Double‑click `run_gui.bat`. The batch file will:
+- Change to the project root.
+- Activate the virtual environment if `.venv` exists.
+- Launch the GUI.
+- Keep the window open after the GUI closes.
+
+**Direct script execution**:
+```bash
+python src/gui_app.py
+```
+
+#### GUI layout
+- **Course selection area** – text entry for slug, buttons for create/refresh/open.
+- **Course status area** – scrollable text showing the output of `course_workflow_status`.
+- **Action buttons** – Transcribe, Cleanup, Export prompts, Build index, Import manual summary.
+- **Log/output area** – scrollable text that displays commands and their stdout/stderr.
+
+#### Behavior of each action
+- **Create course** – asks for optional title, runs `src.create_course_workspace`.
+- **Refresh status** – runs `src.course_workflow_status` and displays the result.
+- **Open course folder** – opens `courses/<slug>/` in Windows Explorer.
+- **Transcribe** – asks for overwrite confirmation, runs `src.course_transcribe`.
+- **Cleanup** – asks for overwrite confirmation, runs `src.course_cleanup`.
+- **Export prompts** – asks for overwrite confirmation, runs `src.course_export_prompts`.
+- **Build index** – asks for overwrite confirmation, runs `src.course_build_index`.
+- **Import manual summary** – opens a file picker for the answer file, asks for transcript filename, resolves the path, runs `src.import_manual_summary`.
+
+#### Notes
+- The GUI is a **prototype**; it uses only Python standard library (Tkinter) and does not add external dependencies.
+- It does **not** call the OpenAI API and does not require an API key.
+- All underlying commands are executed via `subprocess` using `sys.executable`, ensuring the same behavior as manual terminal execution.
+- The GUI is not yet a packaged `.exe`; advanced users can still use the console launcher or direct commands.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -973,6 +1027,7 @@ python -m src.app_launcher
 **Stage 5.2** – Course‑aware workflow wrappers are implemented.
 **Stage 5.3** – Console app launcher is implemented.
 **Stage 5.4** – Windows launcher batch files are implemented.
+**Stage 6.0** – Desktop GUI prototype is implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
