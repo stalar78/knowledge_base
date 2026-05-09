@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Shared transcription engine for GPT Course Knowledge Extractor.
 Stage 2.1: extracted common logic from transcribe_audio.py and transcribe_batch.py.
@@ -46,9 +46,9 @@ def transcribe_file(
         markdown_dir: Optional custom directory for .md transcripts.
 
     Returns:
-        "processed" – transcription completed and files were written.
-        "skipped"   – output files already exist and overwrite=False.
-        "failed"    – transcription or file writing failed.
+        "processed" - transcription completed and files were written.
+        "skipped"   - output files already exist and overwrite=False.
+        "failed"    - transcription or file writing failed.
     """
     # 1. Ensure output directories exist
     ensure_output_dirs(transcripts_dir, markdown_dir)
@@ -120,3 +120,4 @@ def transcribe_file(
 
     print(f"    Saved: {txt_path.name}, {md_path.name}")
     return "processed"
+

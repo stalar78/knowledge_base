@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Course‑aware batch transcription wrapper.
+Course-aware batch transcription wrapper.
 
 Stage 5.2 of GPT Course Knowledge Extractor.
 Transcribes all audio/video files in a course's input/audio folder,
-writing outputs to the course‑specific output directories.
+writing outputs to the course-specific output directories.
 """
 
 import argparse
@@ -177,3 +177,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Transcript cleanup script using a glossary replacement dictionary.
 Stage 3 of GPT Course Knowledge Extractor.
@@ -29,7 +29,7 @@ def load_replacements(glossary_path: Path) -> dict:
             sys.exit(1)
         for k, v in data.items():
             if not isinstance(k, str) or not isinstance(v, str):
-                print(f"Error: Non‑string key/value in glossary: {k} -> {v}")
+                print(f"Error: Non-string key/value in glossary: {k} -> {v}")
                 sys.exit(1)
         return data
     except json.JSONDecodeError as e:
@@ -142,7 +142,7 @@ def main():
     parser.add_argument(
         "--output-dir",
         default="output/cleaned",
-        help="Directory for cleaned plain‑text transcripts (default: output/cleaned)",
+        help="Directory for cleaned plain-text transcripts (default: output/cleaned)",
     )
     parser.add_argument(
         "--markdown-output-dir",
@@ -318,3 +318,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

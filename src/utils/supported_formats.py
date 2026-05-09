@@ -1,8 +1,8 @@
-"""
-Supported audio/video file extensions for faster‑whisper.
+﻿"""
+Supported audio/video file extensions for faster-whisper.
 
-Note: Some extensions are video containers, but faster‑whisper (via ffmpeg)
-can extract the audio stream from them. Dedicated video‑to‑audio extraction
+Note: Some extensions are video containers, but faster-whisper (via ffmpeg)
+can extract the audio stream from them. Dedicated video-to-audio extraction
 will be handled separately in later stages.
 """
 
@@ -30,6 +30,7 @@ def is_supported_audio_file(path: Path) -> bool:
         path: Path to the file.
 
     Returns:
-        True if the file's suffix (case‑insensitive) is in the supported set.
+        True if the file's suffix (case-insensitive) is in the supported set.
     """
     return path.suffix.lower() in SUPPORTED_AUDIO_EXTENSIONS
+

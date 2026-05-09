@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Course‑aware path utilities.
+Course-aware path utilities.
 
 Provides functions to locate and validate course workspace directories.
-Used by course‑aware workflow wrappers (Stage 5.2).
+Used by course-aware workflow wrappers (Stage 5.2).
 """
 
 import sys
@@ -48,7 +48,7 @@ def validate_course_root(course_root: Path) -> None:
             file=sys.stderr,
         )
         print(
-            f"The workspace seems incomplete. Re‑create it with:",
+            f"The workspace seems incomplete. Re-create it with:",
             file=sys.stderr,
         )
         print(
@@ -113,3 +113,4 @@ if __name__ == "__main__":
     paths = get_course_paths(args.course_slug, Path(args.courses_dir))
     for key, path in paths.items():
         print(f"{key:30} {path}")
+

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Console app launcher / menu for GPT Course Knowledge Extractor.
 
@@ -258,7 +258,7 @@ def menu_build_index() -> None:
 def print_menu() -> None:
     """Print the main menu."""
     print("\n" + "=" * 50)
-    print("GPT Course Knowledge Extractor – Console Launcher")
+    print("GPT Course Knowledge Extractor - Console Launcher")
     print("=" * 50)
     print("1. Create new course workspace")
     print("2. Show course workflow status")
@@ -303,3 +303,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Minimal OpenAI client wrapper for GPT‑based summarization (future use).
+Minimal OpenAI client wrapper for GPT-based summarization (future use).
 Loads configuration from .env and config/openai_settings.json.
-Provides a ready‑to‑use client and settings without making API calls.
+Provides a ready-to-use client and settings without making API calls.
 """
 
 import json
@@ -128,3 +128,4 @@ def smoke_check() -> None:
 
 if __name__ == "__main__":
     smoke_check()
+

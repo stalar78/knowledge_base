@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-GPT‑based summarization for a single cleaned transcript file.
+GPT-based summarization for a single cleaned transcript file.
 Stage 4.1 of the GPT Course Knowledge Extractor.
 """
 
@@ -43,7 +43,7 @@ def validate_input_file(input_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate a GPT‑based summary of a cleaned transcript file.",
+        description="Generate a GPT-based summary of a cleaned transcript file.",
         epilog="Example: python -m src.gpt_summarize output/cleaned/test.txt --overwrite",
     )
     parser.add_argument(
@@ -148,3 +148,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

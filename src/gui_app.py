@@ -2,284 +2,410 @@
 """
 Desktop GUI prototype for GPT Course Knowledge Extractor.
 
-Stage 6.0: First Windows‑friendly desktop GUI using Tkinter.
+Stage 6.0: First Windows-friendly desktop GUI using Tkinter.
 Wraps existing course commands without calling the OpenAI API.
 """
 
+import os
 import subprocess
 import sys
-import os
+import threading
 import webbrowser
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox, filedialog, simpledialog, font
+from tkinter import filedialog, font, messagebox, scrolledtext, simpledialog, ttk
 
 
 class CourseGUI:
-    def __init__(self, root):
+    def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("GPT Course Knowledge Extractor")
-        self.root.geometry("900x650")
-        self.root.minsize(800, 500)
+        self.root.geometry("900x700")
+        self.root.minsize(800, 550)
 
-        # Course slug variable
         self.course_slug_var = tk.StringVar()
+        self.progress_var = tk.IntVar(value=0)
+        self.command_running = False
+        self.action_buttons = []
 
         self._create_widgets()
         self._layout_widgets()
+        self.set_progress(0)
 
-    def _create_widgets(self):
-        # Course selection area
-        self.frame_course = ttk.LabelFrame(
-            self.root, text="Выбор курса", padding=10)
-        ttk.Label(self.frame_course, text="Код курса:").grid(
-            row=0, column=0, sticky="w")
-        self.entry_slug = ttk.Entry(
-            self.frame_course, textvariable=self.course_slug_var, width=30)
+    def _create_widgets(self) -> None:
+        self.frame_course = ttk.LabelFrame(self.root, text="Выбор курса", padding=10)
+        ttk.Label(self.frame_course, text="Код курса:").grid(row=0, column=0, sticky="w")
+
+        self.entry_slug = ttk.Entry(self.frame_course, textvariable=self.course_slug_var, width=30)
         self.entry_slug.grid(row=0, column=1, padx=5, pady=5)
-        self.btn_create = ttk.Button(
-            self.frame_course, text="Создать курс", command=self.create_course)
+
+        self.btn_create = ttk.Button(self.frame_course, text="Создать курс", command=self.create_course)
         self.btn_create.grid(row=0, column=2, padx=5)
-        self.btn_refresh = ttk.Button(
-            self.frame_course, text="Обновить статус", command=self.refresh_status)
+
+        self.btn_refresh = ttk.Button(self.frame_course, text="Обновить статус", command=self.refresh_status)
         self.btn_refresh.grid(row=0, column=3, padx=5)
-        self.btn_open_folder = ttk.Button(
-            self.frame_course, text="Открыть папку курса", command=self.open_course_folder)
+
+        self.btn_open_folder = ttk.Button(self.frame_course, text="Открыть папку курса", command=self.open_course_folder)
         self.btn_open_folder.grid(row=0, column=4, padx=5)
 
-        # Course status area
-        self.frame_status = ttk.LabelFrame(
-            self.root, text="Статус курса", padding=10)
-        self.status_text = scrolledtext.ScrolledText(
-            self.frame_status, height=8, width=80, state="disabled")
+        self.btn_help = ttk.Button(self.frame_course, text="Инструкция", command=self.show_instructions)
+        self.btn_help.grid(row=0, column=5, padx=5)
+
+        self.frame_status = ttk.LabelFrame(self.root, text="Статус курса", padding=10)
+        self.status_text = scrolledtext.ScrolledText(self.frame_status, height=8, width=80, state="disabled")
         self.status_text.pack(fill="both", expand=True)
 
-        # Action buttons area
-        self.frame_actions = ttk.LabelFrame(
-            self.root, text="Действия", padding=10)
-        self.btn_transcribe = ttk.Button(
-            self.frame_actions, text="Транскрибировать", command=self.transcribe)
+        self.frame_actions = ttk.LabelFrame(self.root, text="Действия", padding=10)
+        self.btn_transcribe = ttk.Button(self.frame_actions, text="Транскрибировать", command=self.transcribe)
         self.btn_transcribe.grid(row=0, column=0, padx=5, pady=5)
-        self.btn_cleanup = ttk.Button(
-            self.frame_actions, text="Очистить", command=self.cleanup)
+
+        self.btn_cleanup = ttk.Button(self.frame_actions, text="Очистить", command=self.cleanup)
         self.btn_cleanup.grid(row=0, column=1, padx=5, pady=5)
-        self.btn_export_prompts = ttk.Button(
-            self.frame_actions, text="Создать промпты", command=self.export_prompts)
+
+        self.btn_export_prompts = ttk.Button(self.frame_actions, text="Создать промпты", command=self.export_prompts)
         self.btn_export_prompts.grid(row=0, column=2, padx=5, pady=5)
-        self.btn_build_index = ttk.Button(
-            self.frame_actions, text="Собрать индекс", command=self.build_index)
+
+        self.btn_build_index = ttk.Button(self.frame_actions, text="Собрать индекс", command=self.build_index)
         self.btn_build_index.grid(row=0, column=3, padx=5, pady=5)
-        self.btn_import_summary = ttk.Button(
-            self.frame_actions, text="Импорт summary", command=self.import_summary)
+
+        self.btn_import_summary = ttk.Button(self.frame_actions, text="Импорт summary", command=self.import_summary)
         self.btn_import_summary.grid(row=0, column=4, padx=5, pady=5)
 
-        # Log/output area
-        self.frame_log = ttk.LabelFrame(
-            self.root, text="Лог / вывод", padding=10)
-        self.log_text = scrolledtext.ScrolledText(
-            self.frame_log, height=15, width=80)
+        self.frame_progress = ttk.LabelFrame(self.root, text="Прогресс", padding=10)
+        self.progress_label = ttk.Label(self.frame_progress, text="Прогресс: 0%")
+        self.progress_label.pack(anchor="w", pady=(0, 4))
+        self.progress_bar = ttk.Progressbar(
+            self.frame_progress,
+            mode="determinate",
+            maximum=100,
+            variable=self.progress_var,
+        )
+        self.progress_bar.pack(fill="x")
+
+        self.frame_log = ttk.LabelFrame(self.root, text="Лог / вывод", padding=10)
+        self.log_text = scrolledtext.ScrolledText(self.frame_log, height=14, width=80)
         self.log_text.pack(fill="both", expand=True)
 
-        # Footer link
-        base_font = font.nametofont("TkDefaultFont")
-        self.footer_font = base_font.copy()
+        self.frame_footer = ttk.Frame(self.root)
+        footer_base_font = font.nametofont("TkDefaultFont")
+        self.footer_font = footer_base_font.copy()
         self.footer_font.configure(underline=True)
         self.footer_link = tk.Label(
-            self.root,
+            self.frame_footer,
             text="by StalarVisison",
-            fg="#1a5fb4",
+            fg="blue",
             cursor="hand2",
             font=self.footer_font,
-            anchor="e"
         )
+        self.footer_link.pack(side="right")
         self.footer_link.bind("<Button-1>", self.open_footer_link)
 
-    def _layout_widgets(self):
+        self.action_buttons = [
+            self.btn_create,
+            self.btn_refresh,
+            self.btn_open_folder,
+            self.btn_help,
+            self.btn_transcribe,
+            self.btn_cleanup,
+            self.btn_export_prompts,
+            self.btn_build_index,
+            self.btn_import_summary,
+        ]
+
+    def _layout_widgets(self) -> None:
         self.frame_course.pack(fill="x", padx=10, pady=10)
         self.frame_status.pack(fill="both", padx=10, pady=(0, 10), expand=True)
         self.frame_actions.pack(fill="x", padx=10, pady=(0, 10))
-        self.frame_log.pack(fill="both", padx=10, pady=(0, 6), expand=True)
-        self.footer_link.pack(fill="x", padx=12, pady=(0, 8), anchor="e")
+        self.frame_progress.pack(fill="x", padx=10, pady=(0, 10))
+        self.frame_log.pack(fill="both", padx=10, pady=(0, 8), expand=True)
+        self.frame_footer.pack(fill="x", side="bottom", padx=10, pady=(0, 5))
 
-    def open_footer_link(self, _event=None):
+    def open_footer_link(self, _event=None) -> None:
         webbrowser.open("https://stalarvision.ru/")
 
-    def get_slug(self):
-        """Return trimmed slug, show warning if empty."""
-        slug = self.course_slug_var.get().strip()
-        if not slug:
-            messagebox.showwarning(
-                "Пустой код курса", "Введите код курса.")
-            return None
-        return slug
+    def show_instructions(self) -> None:
+        instructions = (
+            "1. Создайте курс.\n"
+            "2. Откройте папку курса.\n"
+            "3. Положите MP3 в input/audio или видео в input/video.\n"
+            "4. Нажмите \"Транскрибировать\".\n"
+            "5. Нажмите \"Очистить\".\n"
+            "6. Нажмите \"Создать промпты\".\n"
+            "7. Откройте prompt-файл и вставьте его в ChatGPT.\n"
+            "8. Сохраните ответ ChatGPT в .md или .txt.\n"
+            "9. Нажмите \"Импорт summary\".\n"
+            "10. Нажмите \"Собрать индекс\"."
+        )
+        messagebox.showinfo("Инструкция", instructions)
 
-    def log(self, message):
-        """Append message to log area."""
+    def set_actions_enabled(self, enabled: bool) -> None:
+        state = "normal" if enabled else "disabled"
+        for button in self.action_buttons:
+            button.configure(state=state)
+
+    def set_progress(self, value: int) -> None:
+        safe_value = max(0, min(100, int(value)))
+        self.progress_var.set(safe_value)
+        self.progress_label.configure(text=f"Прогресс: {safe_value}%")
+
+    def log(self, message: str) -> None:
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
         self.root.update_idletasks()
 
-    def clear_log(self):
-        """Clear log area."""
+    def clear_log(self) -> None:
         self.log_text.delete(1.0, tk.END)
 
-    def run_command(self, args):
-        """
-        Run a command via subprocess, log output, return success.
-        """
-        cmd_str = " ".join(args)
-        self.log(f"[Запуск] {cmd_str}")
-        try:
-            result = subprocess.run(
-                args,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace"
-            )
-            if result.stdout:
-                self.log(result.stdout)
-            if result.stderr:
-                self.log(f"STDERR: {result.stderr}")
-            self.log(f"Return code: {result.returncode}")
-            if result.returncode == 0:
-                self.log("[Готово] Команда выполнена успешно.")
-                return True
-            self.log("[Ошибка] Команда завершилась с ошибкой.")
-            return False
-        except Exception as e:
-            self.log(f"[Ошибка] Не удалось запустить команду: {e}")
-            return False
+    def _set_status_text(self, text: str) -> None:
+        self.status_text.configure(state="normal")
+        self.status_text.delete(1.0, tk.END)
+        self.status_text.insert(tk.END, text)
+        self.status_text.see(tk.END)
+        self.status_text.configure(state="disabled")
 
-    def create_course(self):
+    def get_slug(self):
+        slug = self.course_slug_var.get().strip()
+        if not slug:
+            messagebox.showwarning("Не указан код курса", "Введите код курса.")
+            return None
+        return slug
+
+    def prepare_action(self, start_message: str) -> bool:
+        if self.command_running:
+            messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
+            return False
+        self.clear_log()
+        self.set_progress(0)
+        self.log(start_message)
+        return True
+
+    def run_command_async(
+        self,
+        args: list[str],
+        on_success_message: str,
+        on_fail_message: str,
+        update_status: bool = False,
+    ) -> None:
+        if self.command_running:
+            messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
+            return
+
+        self.command_running = True
+        self.set_actions_enabled(False)
+        self.set_progress(10)
+        command_line = " ".join(args)
+        self.log(f"[Команда] {command_line}")
+        self.set_progress(50)
+
+        def worker() -> None:
+            try:
+                env = os.environ.copy()
+                env["PYTHONIOENCODING"] = "utf-8"
+                env["PYTHONUTF8"] = "1"
+                result = subprocess.run(
+                    args,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                )
+                stdout = result.stdout or ""
+                stderr = result.stderr or ""
+                return_code = result.returncode
+                error = None
+            except Exception as exc:
+                stdout = ""
+                stderr = ""
+                return_code = None
+                error = str(exc)
+
+            self.root.after(
+                0,
+                lambda: self._finish_command(
+                    stdout,
+                    stderr,
+                    return_code,
+                    error,
+                    on_success_message,
+                    on_fail_message,
+                    update_status,
+                ),
+            )
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _finish_command(
+        self,
+        stdout: str,
+        stderr: str,
+        return_code: int | None,
+        error: str | None,
+        on_success_message: str,
+        on_fail_message: str,
+        update_status: bool,
+    ) -> None:
+        if stdout.strip():
+            self.log(stdout.rstrip())
+        if stderr.strip():
+            self.log(f"STDERR:\n{stderr.rstrip()}")
+        if return_code is not None:
+            self.log(f"Return code: {return_code}")
+        if error:
+            self.log(f"[Ошибка] Не удалось запустить команду: {error}")
+
+        success = (return_code == 0) and (error is None)
+        self.set_progress(100)
+
+        if success:
+            self.log("[Готово] Команда выполнена успешно.")
+            if update_status:
+                self._set_status_text(stdout or "Статус курса обновлен.")
+            messagebox.showinfo("Готово", on_success_message)
+        else:
+            self.log("[Ошибка] Команда завершилась с ошибкой.")
+            if return_code is None:
+                self.set_progress(0)
+            messagebox.showerror("Ошибка", on_fail_message)
+
+        self.command_running = False
+        self.set_actions_enabled(True)
+
+    def create_course(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
-        title = simpledialog.askstring(
-            "Название курса", "Необязательное человекочитаемое название:", initialvalue=slug)
-        if title is None:  # user cancelled
+        title = simpledialog.askstring("Создать курс", "Введите название курса (необязательно):", initialvalue=slug)
+        if title is None:
             return
+
+        if not self.prepare_action("Запуск создания курса..."):
+            return
+
         args = [sys.executable, "-m", "src.create_course_workspace", slug]
         if title and title != slug:
             args.extend(["--title", title])
-        success = self.run_command(args)
-        if success:
-            messagebox.showinfo("Готово", f"Курс '{slug}' создан.")
-        else:
-            messagebox.showerror("Ошибка", "Не удалось создать курс.")
+        self.run_command_async(args, f"Курс '{slug}' создан.", "Не удалось создать курс.")
 
-    def refresh_status(self):
+    def refresh_status(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
-        self.clear_log()
+
+        if not self.prepare_action("Запуск обновления статуса курса..."):
+            return
+
         args = [sys.executable, "-m", "src.course_workflow_status", slug]
-        self.run_command(args)
+        self.run_command_async(
+            args,
+            "Статус курса обновлен.",
+            "Не удалось обновить статус курса.",
+            update_status=True,
+        )
 
-    def open_course_folder(self):
+    def open_course_folder(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
+        if self.command_running:
+            messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
+            return
+
+        self.clear_log()
+        self.set_progress(0)
+        self.log("Открытие папки курса...")
+
         folder = Path("courses") / slug
         if not folder.exists():
-            messagebox.showwarning(
-                "Папка не найдена", f"Папка курса не существует:\n{folder}")
+            self.log("[Ошибка] Папка курса не существует.")
+            messagebox.showwarning("Папка не найдена", f"Папка курса не существует:\n{folder}")
             return
+
         try:
             os.startfile(str(folder.resolve()))
-        except Exception as e:
-            self.log(f"[Ошибка] Не удалось открыть папку: {e}")
+            self.set_progress(100)
+            self.log(f"[Готово] Папка открыта: {folder}")
+        except Exception as exc:
+            self.set_progress(0)
+            self.log(f"[Ошибка] Не удалось открыть папку: {exc}")
+            messagebox.showerror("Ошибка", "Не удалось открыть папку курса.")
 
-    def transcribe(self):
+    def transcribe(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
-        overwrite = messagebox.askyesno(
-            "Перезапись", "Перезаписать существующие транскрипты?", default=False)
-        args = [sys.executable, "-m", "src.course_transcribe", slug]
-        if overwrite:
-            args.append("--overwrite")
-        self.clear_log()
-        success = self.run_command(args)
-        if success:
-            messagebox.showinfo("Готово", "Транскрибация завершена.")
-        else:
-            messagebox.showerror("Ошибка", "Не удалось выполнить транскрибацию.")
 
-    def cleanup(self):
+        if not self.prepare_action("Запуск транскрибации курса..."):
+            return
+
+        args = [sys.executable, "-m", "src.course_transcribe", slug, "--overwrite"]
+        self.run_command_async(args, "Транскрибация завершена.", "Не удалось выполнить транскрибацию.")
+
+    def cleanup(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
-        overwrite = messagebox.askyesno(
-            "Перезапись", "Перезаписать существующие очищенные файлы?", default=False)
-        args = [sys.executable, "-m", "src.course_cleanup", slug]
-        if overwrite:
-            args.append("--overwrite")
-        self.clear_log()
-        success = self.run_command(args)
-        if success:
-            messagebox.showinfo("Готово", "Очистка завершена.")
-        else:
-            messagebox.showerror("Ошибка", "Не удалось выполнить очистку.")
 
-    def export_prompts(self):
+        if not self.prepare_action("Запуск очистки курса..."):
+            return
+
+        args = [sys.executable, "-m", "src.course_cleanup", slug, "--overwrite"]
+        self.run_command_async(args, "Очистка завершена.", "Не удалось выполнить очистку.")
+
+    def export_prompts(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
-        overwrite = messagebox.askyesno(
-            "Перезапись", "Перезаписать существующие файлы промптов?", default=False)
-        args = [sys.executable, "-m", "src.course_export_prompts", slug]
-        if overwrite:
-            args.append("--overwrite")
-        self.clear_log()
-        success = self.run_command(args)
-        if success:
-            messagebox.showinfo("Готово", "Создание промптов завершено.")
-        else:
-            messagebox.showerror("Ошибка", "Не удалось создать промпты.")
 
-    def build_index(self):
+        if not self.prepare_action("Запуск создания промптов..."):
+            return
+
+        args = [sys.executable, "-m", "src.course_export_prompts", slug, "--overwrite"]
+        self.run_command_async(args, "Создание промптов завершено.", "Не удалось создать промпты.")
+
+    def build_index(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
-        overwrite = messagebox.askyesno(
-            "Перезапись", "Перезаписать существующие файлы индекса?", default=False)
-        args = [sys.executable, "-m", "src.course_build_index", slug]
-        if overwrite:
-            args.append("--overwrite")
-        self.clear_log()
-        success = self.run_command(args)
-        if success:
-            messagebox.showinfo("Готово", "Сборка индекса завершена.")
-        else:
-            messagebox.showerror("Ошибка", "Не удалось собрать индекс.")
 
-    def import_summary(self):
+        if not self.prepare_action("Запуск сборки индекса..."):
+            return
+
+        args = [sys.executable, "-m", "src.course_build_index", slug, "--overwrite"]
+        self.run_command_async(args, "Сборка индекса завершена.", "Не удалось собрать индекс.")
+
+    def import_summary(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
-        # Select answer file
+
         answer_file = filedialog.askopenfilename(
-            title="Выберите файл ответа",
-            filetypes=[("Markdown файлы", "*.md"),
-                       ("Текстовые файлы", "*.txt"), ("Все файлы", "*.*")]
+            title="Выберите файл с ответом ChatGPT",
+            filetypes=[
+                ("Markdown файлы", "*.md"),
+                ("Текстовые файлы", "*.txt"),
+                ("Все файлы", "*.*"),
+            ],
         )
         if not answer_file:
             return
-        # Ask for transcript filename
+
         transcript = simpledialog.askstring(
-            "Имя файла транскрипта",
-            "Введите имя файла транскрипта (например, test.txt) или полный путь:"
+            "Имя транскрипта",
+            "Введите имя очищенного транскрипта, например: lesson_01.txt",
         )
         if not transcript:
             return
-        # Resolve path
+
         transcript_path = Path(transcript)
-        if not transcript_path.is_absolute() and not str(transcript_path).startswith("courses/"):
-            transcript_path = Path("courses") / slug / \
-                "output" / "cleaned" / transcript
-        overwrite = messagebox.askyesno(
-            "Перезапись", "Перезаписать существующий файл summary?", default=False)
+        transcript_parts = transcript_path.parts
+        transcript_in_courses = len(transcript_parts) > 0 and transcript_parts[0] == "courses"
+        if not transcript_path.is_absolute() and not transcript_in_courses:
+            transcript_path = Path("courses") / slug / "output" / "cleaned" / transcript
+
+        if not self.prepare_action("Запуск импорта summary..."):
+            return
+
         output_dir = Path("courses") / slug / "output" / "gpt_summaries"
         args = [
             sys.executable,
@@ -290,20 +416,14 @@ class CourseGUI:
             str(transcript_path),
             "--output-dir",
             str(output_dir),
+            "--overwrite",
         ]
-        if overwrite:
-            args.append("--overwrite")
-        self.clear_log()
-        success = self.run_command(args)
-        if success:
-            messagebox.showinfo("Готово", "Импорт summary завершен.")
-        else:
-            messagebox.showerror("Ошибка", "Не удалось выполнить импорт summary.")
+        self.run_command_async(args, "Импорт summary завершен.", "Не удалось выполнить импорт summary.")
 
 
-def main():
+def main() -> None:
     root = tk.Tk()
-    app = CourseGUI(root)
+    CourseGUI(root)
     root.mainloop()
 
 

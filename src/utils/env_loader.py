@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Minimal environment file loader.
 Reads a .env file and sets environment variables (if not already set).
@@ -15,7 +15,7 @@ def load_env_file(env_path: Path = Path(".env")) -> None:
     """
     Load environment variables from a .env file.
 
-    The file is expected to be UTF‑8 encoded, with lines in the format:
+    The file is expected to be UTF-8 encoded, with lines in the format:
         KEY=VALUE
     Empty lines and lines starting with '#' are ignored.
     If a variable is already set in the environment, it is NOT overwritten.
@@ -30,7 +30,7 @@ def load_env_file(env_path: Path = Path(".env")) -> None:
     None
     """
     if not env_path.is_file():
-        # No .env file – nothing to do
+        # No .env file - nothing to do
         return
 
     try:
@@ -62,3 +62,4 @@ if __name__ == "__main__":
             print(f"{k}={v}")
     if not any("OPENAI" in k.upper() for k in os.environ):
         print("No OPENAI_* variables found.")
+

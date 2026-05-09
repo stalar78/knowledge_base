@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Course workspace initializer.
 
@@ -97,15 +97,15 @@ This folder contains materials for the course **{title}** (`{slug}`).
 
 ## Folder structure
 
-- `input/audio/` – place audio files for transcription.
-- `input/video/` – place video files (audio will be extracted).
-- `output/transcripts/` – raw transcript files.
-- `output/markdown/` – formatted transcripts with metadata.
-- `output/cleaned/` – cleaned transcript text files.
-- `output/cleaned_markdown/` – cleaned transcripts in markdown format.
-- `output/gpt_prompts/` – ready‑to‑copy ChatGPT prompts.
-- `output/gpt_summaries/` – imported ChatGPT summaries.
-- `output/reports/` – audit reports and summary index.
+- `input/audio/` - place audio files for transcription.
+- `input/video/` - place video files (audio will be extracted).
+- `output/transcripts/` - raw transcript files.
+- `output/markdown/` - formatted transcripts with metadata.
+- `output/cleaned/` - cleaned transcript text files.
+- `output/cleaned_markdown/` - cleaned transcripts in markdown format.
+- `output/gpt_prompts/` - ready-to-copy ChatGPT prompts.
+- `output/gpt_summaries/` - imported ChatGPT summaries.
+- `output/reports/` - audit reports and summary index.
 
 ## Suggested workflow
 
@@ -226,3 +226,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

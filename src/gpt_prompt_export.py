@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Export ready‑to‑copy ChatGPT prompts from cleaned transcript files.
-Stage 4.1‑manual: manual fallback when OpenAI API quota is unavailable.
+Export ready-to-copy ChatGPT prompts from cleaned transcript files.
+Stage 4.1-manual: manual fallback when OpenAI API quota is unavailable.
 """
 
 import argparse
@@ -102,3 +102,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

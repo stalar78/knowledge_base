@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Course‑aware transcript cleanup wrapper.
+Course-aware transcript cleanup wrapper.
 
 Stage 5.2 of GPT Course Knowledge Extractor.
 Cleans raw transcript files in a course's output/transcripts folder,
-writing cleaned outputs to the course‑specific cleaned directories.
+writing cleaned outputs to the course-specific cleaned directories.
 """
 
 import argparse
@@ -142,3 +142,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

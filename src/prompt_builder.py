@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Prompt builder for GPT‑based transcript summarization.
-Provides a reusable function that creates a ready‑to‑copy ChatGPT prompt.
+Prompt builder for GPT-based transcript summarization.
+Provides a reusable function that creates a ready-to-copy ChatGPT prompt.
 """
 
 
@@ -28,7 +28,7 @@ Please analyze the transcript and return a markdown answer with the following se
 # GPT Summary: {source_name}
 
 ## Short Summary
-A concise summary of the transcript (2–3 sentences).
+A concise summary of the transcript (2-3 sentences).
 
 ## Key Ideas
 Main useful ideas from the transcript (bullet points).
@@ -63,3 +63,4 @@ if __name__ == "__main__":
     dummy_text = "This is a test transcript about Python programming."
     prompt = build_summary_prompt(dummy_text, "test.txt")
     print(prompt[:200] + "..." if len(prompt) > 200 else prompt)
+

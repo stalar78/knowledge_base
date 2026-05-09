@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Course‑aware summary index builder wrapper.
+Course-aware summary index builder wrapper.
 
 Stage 5.2 of GPT Course Knowledge Extractor.
 Builds a local index from imported GPT summary markdown files in a course's output/gpt_summaries folder,
-writing index files to the course‑specific reports directory.
+writing index files to the course-specific reports directory.
 """
 
 import argparse
@@ -146,3 +146,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

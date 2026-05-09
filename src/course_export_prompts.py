@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Course‑aware ChatGPT prompt export wrapper.
+Course-aware ChatGPT prompt export wrapper.
 
 Stage 5.2 of GPT Course Knowledge Extractor.
-Exports ready‑to‑copy ChatGPT prompts from cleaned transcript files in a course's output/cleaned folder,
-writing prompts to the course‑specific gpt_prompts directory.
+Exports ready-to-copy ChatGPT prompts from cleaned transcript files in a course's output/cleaned folder,
+writing prompts to the course-specific gpt_prompts directory.
 """
 
 import argparse
@@ -123,3 +123,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

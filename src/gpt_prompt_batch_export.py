@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Batch export of ready‑to‑copy ChatGPT prompts from cleaned transcript files.
+Batch export of ready-to-copy ChatGPT prompts from cleaned transcript files.
 Stage 4.2 of the GPT Course Knowledge Extractor.
 """
 
@@ -191,3 +191,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

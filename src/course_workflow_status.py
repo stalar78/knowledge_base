@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-Course workflow status and next‑step helper.
+Course workflow status and next-step helper.
 
 Stage 5.1 of GPT Course Knowledge Extractor.
 Inspects a course workspace, counts files at each workflow stage,
-and suggests the next step with a ready‑to‑run command.
+and suggests the next step with a ready-to-run command.
 """
 
 import argparse
@@ -34,7 +34,7 @@ def validate_course_workspace(courses_dir: Path, course_slug: str) -> Path:
     if not config_path.is_file():
         print(
             f"Error: Course configuration '{config_path}' not found.", file=sys.stderr)
-        print(f"The workspace seems incomplete. Re‑create it with:", file=sys.stderr)
+        print(f"The workspace seems incomplete. Re-create it with:", file=sys.stderr)
         print(
             f"  python -m src.create_course_workspace {course_slug} --overwrite-readme", file=sys.stderr)
         sys.exit(1)
@@ -202,8 +202,8 @@ def determine_next_step(counts: Dict[str, int], course_root: Path) -> Tuple[str,
         )
         return step, cmd
 
-    step = "Course workspace is ready for course‑level analysis"
-    cmd = "No immediate command. Proceed to course‑level analysis stage."
+    step = "Course workspace is ready for course-level analysis"
+    cmd = "No immediate command. Proceed to course-level analysis stage."
     return step, cmd
 
 
@@ -216,7 +216,7 @@ def print_status(
     command: str,
 ) -> None:
     """
-    Print a human‑readable status report.
+    Print a human-readable status report.
     """
     rel_path = course_path.relative_to(
         Path.cwd()) if course_path.is_relative_to(Path.cwd()) else course_path
@@ -288,3 +288,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
