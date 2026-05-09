@@ -280,13 +280,59 @@ Reports are overwritten on each script run. If you need to keep historical repor
 - This stage is completely local and does not require an internet connection or GPT API.
 - The script uses the same helper `ensure_output_dirs` to create output folders automatically.
 
+## Stage 4.0: OpenAI configuration
+
+This stage prepares the project for future GPT‑based summarization by adding a configuration layer and a minimal OpenAI client wrapper. No API calls are made yet.
+
+### Configuration files
+
+- **`.env.example`** – template for environment variables. Copy it to `.env` and add your OpenAI API key:
+  ```bash
+  cp .env.example .env
+  ```
+  Then edit `.env` and set:
+  ```
+  OPENAI_API_KEY=your_openai_api_key_here
+  ```
+  The `.env` file is ignored by Git (see `.gitignore`).
+
+- **`config/openai_settings.json`** – contains model parameters (model name, temperature, max tokens). You can adjust these values before running future summarization scripts.
+
+### Dependencies
+
+The `openai` package has been added to `requirements.txt`. Install it with:
+```bash
+pip install -r requirements.txt
+```
+
+### Smoke check
+
+To verify that your configuration is correctly loaded, run:
+```bash
+python -m src.gpt_client
+```
+This command will:
+- Load the `.env` file (if present).
+- Load settings from `config/openai_settings.json`.
+- Check that `OPENAI_API_KEY` is set.
+- Print the loaded model and parameters.
+
+If the API key is missing, you’ll see a clear error message explaining how to fix it.
+
+### What’s next?
+
+The `src/gpt_client.py` module provides a function `get_openai_client_and_settings()` that returns a ready‑to‑use OpenAI client and the settings dictionary. This will be used in Stage 4.1 (actual summarization) without requiring additional configuration.
+
+**Important:** This stage does **not** call the OpenAI API yet. It only sets up the configuration and validation layer.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
 **Stage 2** – Batch processing of multiple files is implemented.
 **Stage 3** – Transcript cleanup with glossary replacements is implemented.
+**Stage 4.0** – OpenAI configuration layer is implemented.
 Planned stages (see `docs/ROADMAP.md`):
-- Stage 4: GPT‑based summarization & knowledge extraction
+- Stage 4.1: GPT‑based summarization & knowledge extraction
 - Stage 5: Interactive web interface
 
 ### Notes
