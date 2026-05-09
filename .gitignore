@@ -72,4 +72,8 @@ logs/
 dist/
 build/
 .coverage
-htmlcov/
+htmlcov/ 
+courses/*/input/audio/* 
+!courses/*/input/audio/.gitkeep 
+courses/*/input/video/* 
+!courses/*/input/video/.gitkeep 

@@ -614,6 +614,93 @@ If a metadata field is missing, it is stored as an empty string.
 - Generated index files are ignored by Git (see `.gitignore` rule `output/reports/*`).
 - The script validates the input directory, skips missing files, and exits cleanly when no `.md` files are found.
 
+### Stage 5.0: Course workspaces
+
+This stage introduces course‑specific workspaces to keep materials from different courses separate. Instead of mixing all files in the global `input/` and `output/` folders, you can create a dedicated folder structure under `courses/<course_slug>/` with its own input/output subdirectories.
+
+#### Purpose
+
+Prepare the project for working with multiple separate courses. Each course workspace contains a complete folder tree (input audio/video, output transcripts, cleaned files, GPT prompts, summaries, reports) and a configuration file. The existing scripts can already work with course‑specific paths by passing custom input/output arguments.
+
+#### Requirements
+
+- No `.env` or `OPENAI_API_KEY` required.
+- A valid course slug (lowercase letters, numbers, hyphens, underscores).
+
+#### Usage
+
+```bash
+python -m src.create_course_workspace python_backend_course --title "Python Backend Course"
+```
+
+Optional arguments:
+- `--title` – human‑readable title (default: slug transformed to title case).
+- `--overwrite-readme` – overwrite existing `README.md` (default: skip if exists).
+
+#### Created structure
+
+```
+courses/python_backend_course/
+├── course_config.json
+├── README.md
+├── input/
+│   ├── audio/
+│   │   └── .gitkeep
+│   └── video/
+│       └── .gitkeep
+└── output/
+    ├── transcripts/
+    │   └── .gitkeep
+    ├── markdown/
+    │   └── .gitkeep
+    ├── cleaned/
+    │   └── .gitkeep
+    ├── cleaned_markdown/
+    │   └── .gitkeep
+    ├── gpt_prompts/
+    │   └── .gitkeep
+    ├── gpt_summaries/
+    │   └── .gitkeep
+    └── reports/
+        └── .gitkeep
+```
+
+- **course_config.json** – basic metadata about the course.
+- **README.md** – detailed workflow commands adapted to this course folder.
+- All output folders are ignored by Git (except `.gitkeep` placeholders) via updated `.gitignore` rules.
+
+#### Workflow with a course
+
+After creating a workspace, you can run the existing scripts with course‑specific paths. Examples:
+
+```bash
+# Transcribe audio files placed in the course's input/audio folder
+python -m src.transcribe_batch courses/python_backend_course/input/audio --overwrite
+
+# Clean up transcripts
+python -m src.cleanup_transcript courses/python_backend_course/output/transcripts \
+  --output-dir courses/python_backend_course/output/cleaned \
+  --markdown-output-dir courses/python_backend_course/output/cleaned_markdown \
+  --overwrite
+
+# Export ChatGPT prompts
+python -m src.gpt_prompt_batch_export courses/python_backend_course/output/cleaned \
+  --output-dir courses/python_backend_course/output/gpt_prompts \
+  --overwrite
+
+# Build summary index
+python -m src.build_summary_index courses/python_backend_course/output/gpt_summaries \
+  --output courses/python_backend_course/output/reports/summary_index.md \
+  --json-output courses/python_backend_course/output/reports/summary_index.json \
+  --overwrite
+```
+
+#### Notes
+
+- This stage **does not call the OpenAI API** and does not require an API key.
+- The workspace initializer does **not** delete or overwrite existing course folders; it only creates missing directories and files.
+- Generated course data (audio, video, output files) is ignored by Git; configuration and README are kept.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -625,6 +712,7 @@ If a metadata field is missing, it is stored as an empty string.
 **Stage 4.2** – Batch manual prompt export is implemented.
 **Stage 4.3** – Manual summary import is implemented.
 **Stage 4.4** – Summary index is implemented.
+**Stage 5.0** – Course workspaces are implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
