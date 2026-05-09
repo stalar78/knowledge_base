@@ -902,6 +902,61 @@ Course workspace created successfully.
 - All underlying scripts are called as subprocesses, ensuring the same behavior as manual execution.
 - The launcher is intentionally kept simple; advanced users can still use the direct commands.
 
+### Stage 5.4: Windows launcher
+
+This stage adds Windows‑friendly batch files that allow you to start the console app launcher by double‑clicking, and a helper script for first‑time setup.
+
+#### Purpose
+Make the project more accessible to Windows users who prefer not to use the terminal directly. The batch files handle virtual‑environment activation and provide clear guidance if the environment is missing.
+
+#### Files created
+
+- **`run_app.bat`** – launches the console app launcher.
+- **`setup_windows.bat`** – helps with first‑time setup (creates `.venv`, installs dependencies).
+
+#### Usage
+
+**First‑time setup** (if you haven't created a virtual environment yet):
+1. Double‑click `setup_windows.bat`.
+2. Wait for the script to create `.venv`, upgrade pip, and install the required packages.
+3. When the script finishes, press any key to close the window.
+
+**Running the app**:
+1. Double‑click `run_app.bat`.
+2. The console window will open, activate the virtual environment (if present), and start the interactive menu.
+3. Use the menu as described in Stage 5.3.
+
+**Alternative terminal command** (if you prefer the command line):
+```bash
+python -m src.app_launcher
+```
+
+#### Behavior of `run_app.bat`
+
+- Sets the console title to “GPT Course Knowledge Extractor”.
+- Changes the current directory to the folder where the `.bat` file is located.
+- Checks for `.venv\Scripts\activate.bat` and activates it if found.
+- If `.venv` is missing, prints a warning with instructions.
+- Runs `python -m src.app_launcher`.
+- After the app exits, keeps the window open with a “press any key” prompt.
+
+#### Behavior of `setup_windows.bat`
+
+- Sets the console title to “GPT Course Knowledge Extractor Setup”.
+- Changes to the script’s directory.
+- Creates `.venv` if it does not already exist.
+- Activates the virtual environment.
+- Upgrades pip.
+- Installs packages from `requirements.txt`.
+- Prints a success message and waits for a key press.
+
+#### Notes
+
+- These batch files are **not** a GUI; they are a convenience wrapper for the existing console app launcher.
+- They do **not** call the OpenAI API and do not require an API key.
+- The launcher still works exactly as described in Stage 5.3.
+- Advanced users can continue to use the direct Python commands.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -917,6 +972,7 @@ Course workspace created successfully.
 **Stage 5.1** – Course workflow status is implemented.
 **Stage 5.2** – Course‑aware workflow wrappers are implemented.
 **Stage 5.3** – Console app launcher is implemented.
+**Stage 5.4** – Windows launcher batch files are implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
