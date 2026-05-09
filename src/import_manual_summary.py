@@ -16,17 +16,30 @@ import sys
 from pathlib import Path
 
 
-def validate_file(path: Path, expected_suffix: str, description: str) -> None:
-    """Check that a file exists and has the expected extension."""
+def validate_file(path: Path, expected_suffix, description: str) -> None:
+    """Check that a file exists and has one of the expected extensions.
+
+    expected_suffix can be a single string (e.g., '.txt') or a list/tuple of strings.
+    """
     if not path.exists():
         print(f"Error: {description} does not exist: {path}", file=sys.stderr)
         sys.exit(1)
     if not path.is_file():
         print(f"Error: {description} is not a file: {path}", file=sys.stderr)
         sys.exit(1)
-    if path.suffix.lower() != expected_suffix:
+
+    if isinstance(expected_suffix, str):
+        allowed = [expected_suffix]
+    else:
+        allowed = list(expected_suffix)
+
+    if path.suffix.lower() not in allowed:
+        if len(allowed) == 1:
+            msg = f"must have extension {allowed[0]}"
+        else:
+            msg = f"must have one of the extensions {', '.join(allowed)}"
         print(
-            f"Error: {description} must have extension {expected_suffix}: {path}",
+            f"Error: {description} {msg}: {path}",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -41,7 +54,7 @@ def main() -> None:
     parser.add_argument(
         "answer_file",
         type=Path,
-        help="Path to the markdown/text file containing ChatGPT's answer",
+        help="Path to the markdown or text file containing ChatGPT's answer (.md or .txt)",
     )
     parser.add_argument(
         "--source-transcript",
@@ -64,7 +77,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # 1. Validate input files
-    validate_file(args.answer_file, ".md", "Answer file")
+    validate_file(args.answer_file, [".md", ".txt"], "Answer file")
     validate_file(args.source_transcript, ".txt", "Source transcript file")
 
     # 2. Determine output path

@@ -54,4 +54,16 @@ logs/
 dist/
 build/
 .coverage
-htmlcov/
+htmlcov/# test 
+ 
+output/cleaned/* 
+"output/cleaned/*" 
+"!output/cleaned/.gitkeep" 
+"output/cleaned_markdown/*" 
+"!output/cleaned_markdown/.gitkeep" 
+"output/gpt_prompts/*" 
+"!output/gpt_prompts/.gitkeep" 
+"output/gpt_summaries/*" 
+"!output/gpt_summaries/.gitkeep" 
+"output/reports/*" 
+"!output/reports/.gitkeep" 
