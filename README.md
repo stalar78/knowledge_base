@@ -460,6 +460,78 @@ The script prints:
 - The generated prompts are ignored by Git (see `.gitignore`).
 - You can reuse the same prompts with different ChatGPT models (GPT‑3.5, GPT‑4, etc.).
 
+### Stage 4.3: Manual summary import
+
+This stage completes the manual workflow by providing a clean way to import/save ChatGPT's markdown answer into the standard summary directory (`output/gpt_summaries/`) with consistent metadata.
+
+#### Purpose
+
+After you copy a generated prompt into ChatGPT manually, you need to store ChatGPT's answer in a structured format. This script imports the answer file, adds metadata (source transcript, import mode, etc.), and saves it as a standardized markdown summary.
+
+#### Requirements
+
+- No `.env` or `OPENAI_API_KEY` required.
+- A markdown/text file containing ChatGPT's answer (e.g., `manual_answer.md`).
+- The original cleaned transcript `.txt` file (used for naming and metadata).
+
+#### Usage
+
+```bash
+python -m src.import_manual_summary manual_answer.md --source-transcript output/cleaned/test.txt --overwrite
+```
+
+Optional arguments:
+- `--output-dir` – directory where the imported summary will be saved (default: `output/gpt_summaries/`).
+- `--overwrite` – overwrite existing summary file (default: skip if exists).
+
+#### Workflow example
+
+1. **Generate a prompt** (single file):
+   ```bash
+   python -m src.gpt_prompt_export output/cleaned/test.txt --overwrite
+   ```
+   This creates `output/gpt_prompts/test_prompt.md`.
+
+2. **Copy the prompt** into ChatGPT (web interface or app).
+
+3. **Save ChatGPT's answer** locally, for example as `manual_answer.md`.
+
+4. **Import the answer**:
+   ```bash
+   python -m src.import_manual_summary manual_answer.md --source-transcript output/cleaned/test.txt --overwrite
+   ```
+
+5. **Final summary** appears at:
+   ```
+   output/gpt_summaries/test.md
+   ```
+
+#### Output format
+
+The imported summary file contains:
+
+```markdown
+# GPT Summary: test.txt
+
+## Metadata
+
+- Source transcript: /full/path/to/output/cleaned/test.txt
+- Manual answer file: /full/path/to/manual_answer.md
+- Import mode: manual ChatGPT
+- Notes: Imported from a manually copied ChatGPT answer.
+
+---
+
+<content of answer_file>
+```
+
+#### Notes
+
+- This mode **does not call the OpenAI API** and does not require an API key.
+- Generated summaries in `output/gpt_summaries/` are ignored by Git (see `.gitignore`).
+- The script validates that both input files exist and have the correct extensions (`.md` for answer, `.txt` for transcript).
+- If the output file already exists and `--overwrite` is not passed, the script prints a skip message and exits cleanly.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -469,6 +541,7 @@ The script prints:
 **Stage 4.1** – GPT‑based summarization for a single transcript is implemented.
 **Stage 4.1‑manual** – ChatGPT prompt export for manual summarization is implemented.
 **Stage 4.2** – Batch manual prompt export is implemented.
+**Stage 4.3** – Manual summary import is implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
