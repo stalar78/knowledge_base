@@ -6,6 +6,12 @@ echo ==============================================
 echo GPT Course Knowledge Extractor - GUI
 echo ==============================================
 echo.
+echo Normal launch without terminal:
+echo   double-click run_gui.vbs
+echo.
+echo Debug launch with terminal (this file):
+echo   run_gui.bat
+echo.
 
 if exist ".venv\Scripts\activate.bat" (
     call ".venv\Scripts\activate.bat"

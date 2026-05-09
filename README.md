@@ -970,30 +970,29 @@ Replace the terminal‑only menu with a normal desktop window that retains the s
 - **Log area** – shows the exact commands being executed and their output.
 - **Error handling** – warns about missing slugs, shows subprocess errors, and keeps the GUI responsive.
 
+### Stage 6.0.1: GUI polish (Russian UI + silent launcher)
+
+This update improves usability on Windows and localizes the GUI into Russian.
+
 #### Usage
 
-**Run via Python module** (recommended):
+**Normal Windows launch (without terminal window):**
+- Double‑click `run_gui.vbs`.
+
+**Debug launch (with terminal window and console output):**
+- Double‑click `run_gui.bat`.
+
+**Terminal launch:**
 ```bash
 python -m src.gui_app
 ```
 
-**Run via batch file** (Windows):
-Double‑click `run_gui.bat`. The batch file will:
-- Change to the project root.
-- Activate the virtual environment if `.venv` exists.
-- Launch the GUI.
-- Keep the window open after the GUI closes.
-
-**Direct script execution**:
-```bash
-python src/gui_app.py
-```
-
 #### GUI layout
-- **Course selection area** – text entry for slug, buttons for create/refresh/open.
-- **Course status area** – scrollable text showing the output of `course_workflow_status`.
-- **Action buttons** – Transcribe, Cleanup, Export prompts, Build index, Import manual summary.
-- **Log/output area** – scrollable text that displays commands and their stdout/stderr.
+- **Выбор курса** – поле кода курса и кнопки создания/обновления/открытия папки.
+- **Статус курса** – прокручиваемое поле с результатом `course_workflow_status`.
+- **Действия** – кнопки: Транскрибировать, Очистить, Создать промпты, Собрать индекс, Импорт summary.
+- **Лог / вывод** – прокручиваемый вывод команд (stdout/stderr).
+- **Footer link** – clickable label `by StalarVisison` that opens `https://stalarvision.ru/`.
 
 #### Behavior of each action
 - **Create course** – asks for optional title, runs `src.create_course_workspace`.
@@ -1028,6 +1027,7 @@ python src/gui_app.py
 **Stage 5.3** – Console app launcher is implemented.
 **Stage 5.4** – Windows launcher batch files are implemented.
 **Stage 6.0** – Desktop GUI prototype is implemented.
+**Stage 6.0.1** – GUI polish (Russian UI, footer link, silent `run_gui.vbs` launcher) is implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
