@@ -27,9 +27,23 @@ def transcribe_file(
     compute_type: str,
     overwrite: bool = False,
     print_segments: bool = True,
+    transcripts_dir: Path = None,
+    markdown_dir: Path = None,
 ) -> str:
     """
     Transcribe a single audio file using an already loaded WhisperModel.
+
+    Args:
+        audio_path: Path to the audio file.
+        model: Loaded WhisperModel instance.
+        model_name: Name of the model (for metadata).
+        language: Language code or "auto".
+        device: "cpu" or "cuda".
+        compute_type: "int8", "float16", etc.
+        overwrite: Whether to overwrite existing output files.
+        print_segments: Whether to print segments to console.
+        transcripts_dir: Optional custom directory for .txt transcripts.
+        markdown_dir: Optional custom directory for .md transcripts.
 
     Returns:
         "processed" – transcription completed and files were written.
@@ -37,10 +51,11 @@ def transcribe_file(
         "failed"    – transcription or file writing failed.
     """
     # 1. Ensure output directories exist
-    ensure_output_dirs()
+    ensure_output_dirs(transcripts_dir, markdown_dir)
 
     # 2. Determine output paths
-    txt_path, md_path = get_output_paths(audio_path)
+    txt_path, md_path = get_output_paths(
+        audio_path, transcripts_dir, markdown_dir)
 
     # 3. Check if outputs already exist (unless overwrite)
     if not overwrite and (txt_path.exists() or md_path.exists()):

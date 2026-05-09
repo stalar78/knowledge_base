@@ -770,6 +770,65 @@ The script counts only real generated/input files (ignores `.gitkeep`) and follo
 - The script only inspects files; it does not modify, delete, or create anything.
 - It validates that the course workspace and its `course_config.json` exist.
 
+### Stage 5.2: Course‑aware workflow wrappers
+
+This stage introduces short, course‑aware wrapper commands that reduce the need to type long path‑heavy workflow commands. Instead of specifying full paths like `courses/my_course/output/transcripts`, you can simply pass the course slug.
+
+#### Purpose
+
+Make the workflow more convenient when working with multiple courses. Each wrapper validates the course workspace, determines the correct input/output directories, and runs the underlying batch script with the appropriate arguments.
+
+#### Commands
+
+| Command | Description | Equivalent long command |
+|---------|-------------|--------------------------|
+| `python -m src.course_transcribe <slug>` | Transcribe audio/video files in the course's `input/audio` folder. | `python -m src.transcribe_batch courses/<slug>/input/audio --overwrite` |
+| `python -m src.course_cleanup <slug>` | Clean raw transcripts in the course's `output/transcripts` folder. | `python -m src.cleanup_transcript courses/<slug>/output/transcripts --output-dir courses/<slug>/output/cleaned --markdown-output-dir courses/<slug>/output/cleaned_markdown --overwrite` |
+| `python -m src.course_export_prompts <slug>` | Export ChatGPT prompts from cleaned transcripts. | `python -m src.gpt_prompt_batch_export courses/<slug>/output/cleaned --output-dir courses/<slug>/output/gpt_prompts --overwrite` |
+| `python -m src.course_build_index <slug>` | Build a summary index from imported GPT summaries. | `python -m src.build_summary_index courses/<slug>/output/gpt_summaries --output courses/<slug>/output/reports/summary_index.md --json-output courses/<slug>/output/reports/summary_index.json --overwrite` |
+
+#### Usage
+
+All wrappers accept the same optional arguments:
+
+- `--courses-dir` – directory containing course workspaces (default: `courses`).
+- `--overwrite` – overwrite existing output files.
+- `--recursive` – scan subfolders recursively (where applicable).
+
+Example workflow for a course `python_backend_course`:
+
+```bash
+# 1. Create the course workspace (if not already done)
+python -m src.create_course_workspace python_backend_course --title "Python Backend Course"
+
+# 2. Place audio/video files into courses/python_backend_course/input/audio/
+
+# 3. Transcribe them
+python -m src.course_transcribe python_backend_course --overwrite
+
+# 4. Clean the raw transcripts
+python -m src.course_cleanup python_backend_course --overwrite
+
+# 5. Export ChatGPT prompts
+python -m src.course_export_prompts python_backend_course --overwrite
+
+# 6. (Manual step) Copy prompts into ChatGPT, save answers locally, then import with:
+python -m src.import_manual_summary manual_answer.md --source-transcript courses/python_backend_course/output/cleaned/<transcript>.txt --output-dir courses/python_backend_course/output/gpt_summaries --overwrite
+
+# 7. Build summary index
+python -m src.course_build_index python_backend_course --overwrite
+
+# 8. Check workflow status
+python -m src.course_workflow_status python_backend_course
+```
+
+#### Notes
+
+- These wrappers **do not call the OpenAI API** and do not require an API key.
+- They rely on the existing batch scripts (`transcribe_batch`, `cleanup_transcript`, `gpt_prompt_batch_export`, `build_summary_index`) and extend them with course‑aware path resolution.
+- The underlying scripts have been extended where necessary (e.g., `transcription_engine` now supports custom output directories) without breaking existing global usage.
+- Manual ChatGPT summary import still uses the original `import_manual_summary` command because it is a per‑file operation that depends on user‑provided answer files.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -783,6 +842,7 @@ The script counts only real generated/input files (ignores `.gitkeep`) and follo
 **Stage 4.4** – Summary index is implemented.
 **Stage 5.0** – Course workspaces are implemented.
 **Stage 5.1** – Course workflow status is implemented.
+**Stage 5.2** – Course‑aware workflow wrappers are implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
