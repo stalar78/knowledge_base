@@ -532,6 +532,88 @@ The imported summary file contains:
 - The script validates that both input files exist and have the correct extensions (`.md` for answer, `.txt` for transcript).
 - If the output file already exists and `--overwrite` is not passed, the script prints a skip message and exits cleanly.
 
+### Stage 4.4: Summary index
+
+This stage builds a local index/catalog from imported GPT summary markdown files. After you have imported several manual ChatGPT summaries into `output/gpt_summaries/`, you can generate a simple index that lists available summaries and extracts basic metadata for later course‑level analysis.
+
+#### Purpose
+
+Create a human‑readable markdown table and a machine‑readable JSON file that catalog all summary files, their titles, source transcripts, and approximate word counts. The index is generated locally and does not call the OpenAI API.
+
+#### Requirements
+
+- No `.env` or `OPENAI_API_KEY` required.
+- A folder containing imported summary `.md` files (e.g., `output/gpt_summaries/`).
+
+#### Usage
+
+```bash
+python -m src.build_summary_index output/gpt_summaries --overwrite
+```
+
+Optional arguments:
+- `--output` – markdown output file (default: `output/reports/summary_index.md`).
+- `--json-output` – JSON output file (default: `output/reports/summary_index.json`).
+- `--recursive` – search for `.md` files recursively in subfolders.
+- `--overwrite` – overwrite existing index files (default: skip if exists).
+
+#### Output
+
+The script creates two files in `output/reports/`:
+
+1. **Markdown index** – `summary_index.md`
+   Contains a table with columns: #, Summary file, Title, Source transcript, Words.
+
+   Example:
+   ```markdown
+   # Summary Index
+
+   ## Summary
+
+   - Summary files: 2
+
+   ## Files
+
+   | # | Summary file | Title | Source transcript | Words |
+   |---:|:---|:---|:---|:---:|
+   | 1 | output/gpt_summaries/test.md | GPT Summary: test.txt | output/cleaned/test.txt | 350 |
+   ```
+
+2. **JSON index** – `summary_index.json`
+   Structured data with the same information for programmatic use.
+
+   Example:
+   ```json
+   {
+     "summary_count": 1,
+     "files": [
+       {
+         "summary_file": "output/gpt_summaries/test.md",
+         "title": "GPT Summary: test.txt",
+         "source_transcript": "...",
+         "manual_answer_file": "...",
+         "import_mode": "manual ChatGPT",
+         "word_count": 350
+       }
+     ]
+   }
+   ```
+
+#### Metadata extraction
+
+The script reads each `.md` file and extracts:
+- **Title** from the first `#` heading.
+- **Source transcript**, **Manual answer file**, **Import mode** from the “## Metadata” section (if present).
+- **Word count** (approximate, based on whitespace splitting).
+
+If a metadata field is missing, it is stored as an empty string.
+
+#### Notes
+
+- This mode **does not call the OpenAI API** and does not require an API key.
+- Generated index files are ignored by Git (see `.gitignore` rule `output/reports/*`).
+- The script validates the input directory, skips missing files, and exits cleanly when no `.md` files are found.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
@@ -542,6 +624,7 @@ The imported summary file contains:
 **Stage 4.1‑manual** – ChatGPT prompt export for manual summarization is implemented.
 **Stage 4.2** – Batch manual prompt export is implemented.
 **Stage 4.3** – Manual summary import is implemented.
+**Stage 4.4** – Summary index is implemented.
 Planned stages (see `docs/ROADMAP.md`):
 - Stage 5: Interactive web interface
 
