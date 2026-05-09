@@ -74,10 +74,12 @@ def clean_single_file(
     markdown_output_dir: Path,
     overwrite: bool,
     glossary_path: Path,
-) -> str:
+) -> tuple[str, int]:
     """
     Clean a single transcript file.
-    Returns "processed", "skipped", or "failed".
+    Returns (status, replacement_count).
+    status is "processed", "skipped", or "failed".
+    replacement_count is zero for skipped/failed.
     """
     # Determine output paths
     stem = input_path.stem
@@ -88,7 +90,7 @@ def clean_single_file(
     if not overwrite and (txt_out.exists() or md_out.exists()):
         print(
             f"  Skipping {input_path.name}: cleaned output already exists. Use --overwrite to regenerate.")
-        return "skipped"
+        return ("skipped", 0)
 
     # Read input
     try:
@@ -96,7 +98,7 @@ def clean_single_file(
             original = f.read()
     except Exception as e:
         print(f"  Failed to read {input_path}: {e}")
-        return "failed"
+        return ("failed", 0)
 
     # Apply replacements
     cleaned, count = apply_replacements(original, replacements)
@@ -107,7 +109,7 @@ def clean_single_file(
             f.write(cleaned)
     except Exception as e:
         print(f"  Failed to write cleaned text to {txt_out}: {e}")
-        return "failed"
+        return ("failed", 0)
 
     # Write cleaned markdown
     try:
@@ -121,10 +123,10 @@ def clean_single_file(
             f.write(cleaned)
     except Exception as e:
         print(f"  Failed to write cleaned markdown to {md_out}: {e}")
-        return "failed"
+        return ("failed", 0)
 
     print(f"  Processed {input_path.name}: {count} replacement(s)")
-    return "processed"
+    return ("processed", count)
 
 
 def main():
@@ -214,7 +216,7 @@ def main():
 
     for idx, file_path in enumerate(files_to_process, start=1):
         print(f"[{idx}/{len(files_to_process)}] {file_path.name}")
-        status = clean_single_file(
+        status, replacement_count = clean_single_file(
             file_path,
             replacements,
             output_dir,
@@ -224,8 +226,7 @@ def main():
         )
         if status == "processed":
             processed += 1
-            # We don't have replacement count per file here; we could return it.
-            # For simplicity, we'll just count total replacements later? Skip for now.
+            total_replacements += replacement_count
         elif status == "skipped":
             skipped += 1
         else:
@@ -238,7 +239,7 @@ def main():
     print(f"  Processed: {processed}")
     print(f"  Skipped:   {skipped}")
     print(f"  Failed:    {failed}")
-    # Note: total replacements not tracked globally; could be added.
+    print(f"  Total replacements: {total_replacements}")
     if failed > 0:
         sys.exit(1)
     else:
