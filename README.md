@@ -325,14 +325,101 @@ The `src/gpt_client.py` module provides a function `get_openai_client_and_settin
 
 **Important:** This stage does **not** call the OpenAI API yet. It only sets up the configuration and validation layer.
 
+## Stage 4.1: GPT summary for one transcript
+
+This stage adds a script that calls the OpenAI API to generate a structured markdown summary of a cleaned transcript file.
+
+### Requirements
+
+- A valid `.env` file with `OPENAI_API_KEY` (see Stage 4.0).
+- A cleaned transcript `.txt` file (e.g., from `output/cleaned/`).
+
+### Usage
+
+```bash
+python -m src.gpt_summarize output/cleaned/test.txt --overwrite
+```
+
+Optional arguments:
+- `--output-dir` – directory where the summary markdown file will be saved (default: `output/gpt_summaries/`).
+- `--overwrite` – overwrite existing summary file (default: skip if exists).
+
+### Output
+
+The script creates a markdown file in `output/gpt_summaries/` with the same stem as the input file, e.g.:
+
+```
+output/gpt_summaries/test.md
+```
+
+The file contains:
+
+- **Metadata** (source file, model, temperature, max tokens).
+- **GPT‑generated sections**:
+  - Short Summary
+  - Key Ideas
+  - Practical Actions
+  - Important Terms
+  - Noise / Low‑value Content
+  - Study Recommendation
+
+### Notes
+
+- This stage **calls the OpenAI API** and may incur API costs.
+- The prompt is designed for educational transcripts; you can adjust it in `src/gpt_summarize.py`.
+- The script validates input file existence and extension, and skips existing outputs unless `--overwrite` is used.
+
+### Stage 4.1 Manual mode: ChatGPT prompt export
+
+When OpenAI API quota is not available, you can use this manual fallback mode. It exports a ready‑to‑copy ChatGPT prompt that you can paste into the ChatGPT web interface (or app) and manually save the answer.
+
+#### Requirements
+
+- No `.env` or `OPENAI_API_KEY` required.
+- A cleaned transcript `.txt` file (e.g., from `output/cleaned/`).
+
+#### Usage
+
+```bash
+python -m src.gpt_prompt_export output/cleaned/test.txt --overwrite
+```
+
+Optional arguments:
+- `--output-dir` – directory where the prompt markdown file will be saved (default: `output/gpt_prompts/`).
+- `--overwrite` – overwrite existing prompt file (default: skip if exists).
+
+#### Output
+
+The script creates a markdown file in `output/gpt_prompts/` with the suffix `_prompt.md`, e.g.:
+
+```
+output/gpt_prompts/test_prompt.md
+```
+
+The file contains a complete ChatGPT prompt that includes the transcript and asks for the same six‑section summary as the API version.
+
+#### Manual workflow
+
+1. Copy the entire content of the prompt file.
+2. Paste it into ChatGPT (web interface or app).
+3. Copy ChatGPT's answer.
+4. Save the answer manually to `output/gpt_summaries/<input_stem>.md`.
+
+#### Notes
+
+- This mode **does not call the OpenAI API** and does not require an API key.
+- The generated prompts are ignored by Git (see `.gitignore`).
+- You can reuse the same prompt with different ChatGPT models (GPT‑3.5, GPT‑4, etc.).
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
 **Stage 2** – Batch processing of multiple files is implemented.
 **Stage 3** – Transcript cleanup with glossary replacements is implemented.
 **Stage 4.0** – OpenAI configuration layer is implemented.
+**Stage 4.1** – GPT‑based summarization for a single transcript is implemented.
+**Stage 4.1‑manual** – ChatGPT prompt export for manual summarization is implemented.
 Planned stages (see `docs/ROADMAP.md`):
-- Stage 4.1: GPT‑based summarization & knowledge extraction
 - Stage 5: Interactive web interface
 
 ### Notes
