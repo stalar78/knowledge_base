@@ -165,12 +165,73 @@ python -m src.transcribe_batch input/audio --model medium --language en
 - If no supported files are found, the script exits with a clear message.
 - The transcription logic is shared between the single‑file and batch scripts via `src/transcription_engine.py`.
 
+## Stage 3: Transcript cleanup
+
+This stage adds a local glossary‑based cleanup of transcript files, correcting common mis‑transcriptions (e.g., “джипити” → “GPT”) without using GPT API.
+
+### Running transcript cleanup
+
+You can run the cleanup script in the same two ways:
+
+**1. Direct script execution:**
+```bash
+python src/cleanup_transcript.py output/transcripts/test.txt --overwrite
+```
+
+**2. Module execution (recommended):**
+```bash
+python -m src.cleanup_transcript output/transcripts/test.txt --overwrite
+```
+
+### Additional options
+
+- `--glossary` – path to JSON glossary file (default: `config/glossary_replacements.json`)
+- `--output-dir` – directory for cleaned plain‑text transcripts (default: `output/cleaned`)
+- `--markdown-output-dir` – directory for cleaned markdown transcripts (default: `output/cleaned_markdown`)
+- `--recursive` – scan subfolders recursively (only when input is a folder)
+- `--overwrite` – overwrite existing cleaned output files
+
+### Examples
+
+Clean a single transcript file:
+```bash
+python -m src.cleanup_transcript output/transcripts/test.txt --overwrite
+```
+
+Clean all `.txt` files in a folder (non‑recursive):
+```bash
+python -m src.cleanup_transcript output/transcripts --overwrite
+```
+
+Clean recursively and overwrite any existing cleaned outputs:
+```bash
+python -m src.cleanup_transcript output/transcripts --recursive --overwrite
+```
+
+### How it works
+
+1. The script loads a replacement dictionary from `config/glossary_replacements.json` (you can edit this file to add your own replacements).
+2. It scans the input path (single file or folder) for `.txt` transcript files.
+3. For each file:
+   - If cleaned outputs already exist and `--overwrite` is not given, the file is skipped.
+   - Otherwise, the script reads the transcript, applies all glossary replacements (case‑sensitive, longest‑first), and counts how many replacements were made.
+   - It saves the cleaned plain‑text transcript to `output/cleaned/<filename>.txt`.
+   - It also generates a markdown version with metadata (source, glossary, replacement count) in `output/cleaned_markdown/<filename>.md`.
+4. A progress counter `[index/total]` is printed for each file.
+5. At the end, a summary shows how many files were processed, skipped, or failed.
+
+### Notes
+
+- The glossary is a simple JSON object `{"mis‑transcribed": "correct", …}`. You can edit it at any time.
+- This stage is completely local and does not require an internet connection or GPT API.
+- The script uses the same helper `ensure_output_dirs` to create output folders automatically.
+
 ### Project status
 
 **Stage 1** – Single‑file transcription is implemented.
 **Stage 2** – Batch processing of multiple files is implemented.
+**Stage 3** – Transcript cleanup with glossary replacements is implemented.
 Planned stages (see `docs/ROADMAP.md`):
-- Stage 3: Video‑to‑audio extraction
 - Stage 4: GPT‑based summarization & knowledge extraction
 - Stage 5: Interactive web interface
 
