@@ -8,12 +8,16 @@ Wraps existing course commands without calling the OpenAI API.
 
 import os
 import subprocess
-import sys
 import threading
 import webbrowser
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
+
+try:
+    from src.runtime_environment import build_module_command, ensure_app_cwd
+except ModuleNotFoundError:
+    from runtime_environment import build_module_command, ensure_app_cwd
 
 
 class CourseGUI:
@@ -402,7 +406,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск создания курса..."):
             return
 
-        args = [sys.executable, "-m", "src.create_course_workspace", slug]
+        args = build_module_command("src.create_course_workspace", slug)
         if title and title != slug:
             args.extend(["--title", title])
         self.run_command_async(args, f"Курс '{slug}' создан.", "Не удалось создать курс.")
@@ -415,7 +419,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск обновления статуса курса..."):
             return
 
-        args = [sys.executable, "-m", "src.course_workflow_status", slug]
+        args = build_module_command("src.course_workflow_status", slug)
         self.run_command_async(
             args,
             "Статус курса обновлен.",
@@ -624,7 +628,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск транскрибации курса...", is_transcribe=True):
             return
 
-        args = [sys.executable, "-m", "src.course_transcribe", slug, "--overwrite"]
+        args = build_module_command("src.course_transcribe", slug, "--overwrite")
         self.run_command_async(args, "Транскрибация завершена.", "Не удалось выполнить транскрибацию.")
 
     def extract_audio(self) -> None:
@@ -635,7 +639,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск извлечения аудио из видео..."):
             return
 
-        args = [sys.executable, "-m", "src.course_extract_audio", slug, "--overwrite"]
+        args = build_module_command("src.course_extract_audio", slug, "--overwrite")
         self.run_command_async(args, "Извлечение аудио завершено.", "Не удалось извлечь аудио из видео.")
 
     def cleanup(self) -> None:
@@ -646,7 +650,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск очистки курса..."):
             return
 
-        args = [sys.executable, "-m", "src.course_cleanup", slug, "--overwrite"]
+        args = build_module_command("src.course_cleanup", slug, "--overwrite")
         self.run_command_async(args, "Очистка завершена.", "Не удалось выполнить очистку.")
 
     def export_prompts(self) -> None:
@@ -657,7 +661,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск создания промптов..."):
             return
 
-        args = [sys.executable, "-m", "src.course_export_prompts", slug, "--overwrite"]
+        args = build_module_command("src.course_export_prompts", slug, "--overwrite")
         self.run_command_async(args, "Создание промптов завершено.", "Не удалось создать промпты.")
 
     def build_index(self) -> None:
@@ -668,7 +672,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск сборки индекса..."):
             return
 
-        args = [sys.executable, "-m", "src.course_build_index", slug, "--overwrite"]
+        args = build_module_command("src.course_build_index", slug, "--overwrite")
         self.run_command_async(args, "Сборка индекса завершена.", "Не удалось собрать индекс.")
 
     def export_course_analysis_prompt(self) -> None:
@@ -679,7 +683,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск создания промпта анализа курса..."):
             return
 
-        args = [sys.executable, "-m", "src.course_export_analysis_prompt", slug, "--overwrite"]
+        args = build_module_command("src.course_export_analysis_prompt", slug, "--overwrite")
         self.run_command_async(
             args,
             "Промпт анализа курса создан.",
@@ -694,7 +698,7 @@ class CourseGUI:
         if not self.prepare_action("Запуск экспорта Obsidian..."):
             return
 
-        args = [sys.executable, "-m", "src.course_export_obsidian", slug, "--overwrite"]
+        args = build_module_command("src.course_export_obsidian", slug, "--overwrite")
         self.run_command_async(
             args,
             "Экспорт Obsidian завершён.",
@@ -734,9 +738,7 @@ class CourseGUI:
             return
 
         output_dir = Path("courses") / slug / "output" / "gpt_summaries"
-        args = [
-            sys.executable,
-            "-m",
+        args = build_module_command(
             "src.import_manual_summary",
             answer_file,
             "--source-transcript",
@@ -744,11 +746,12 @@ class CourseGUI:
             "--output-dir",
             str(output_dir),
             "--overwrite",
-        ]
+        )
         self.run_command_async(args, "Импорт summary завершен.", "Не удалось выполнить импорт summary.")
 
 
 def main() -> None:
+    ensure_app_cwd()
     root = tk.Tk()
     CourseGUI(root)
     root.mainloop()
