@@ -20,8 +20,8 @@ class CourseGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("GPT Course Knowledge Extractor")
-        self.root.geometry("900x700")
-        self.root.minsize(800, 550)
+        self.root.geometry("1200x820")
+        self.root.minsize(1050, 720)
 
         self.course_slug_var = tk.StringVar()
         self.progress_var = tk.IntVar(value=0)
@@ -35,104 +35,131 @@ class CourseGUI:
         self._layout_widgets()
         self.set_progress_idle()
 
+    def create_group(self, parent: ttk.Widget, title: str, row: int, column: int, weight: int = 1) -> ttk.LabelFrame:
+        group = ttk.LabelFrame(parent, text=title, padding=8)
+        group.grid(row=row, column=column, padx=6, pady=6, sticky="nsew")
+        parent.grid_columnconfigure(column, weight=weight)
+        return group
+
     def _create_widgets(self) -> None:
         self.frame_course = ttk.LabelFrame(self.main_frame, text="Выбор курса", padding=10)
-        ttk.Label(self.frame_course, text="Код курса:").grid(row=0, column=0, sticky="w")
+        ttk.Label(self.frame_course, text="Код курса:").grid(row=0, column=0, sticky="w", padx=(0, 6))
 
         self.entry_slug = ttk.Entry(self.frame_course, textvariable=self.course_slug_var, width=30)
-        self.entry_slug.grid(row=0, column=1, padx=5, pady=5)
+        self.entry_slug.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
         self.btn_create = ttk.Button(self.frame_course, text="Создать курс", command=self.create_course)
-        self.btn_create.grid(row=0, column=2, padx=5)
+        self.btn_create.grid(row=0, column=2, padx=5, pady=5)
 
         self.btn_refresh = ttk.Button(self.frame_course, text="Обновить статус", command=self.refresh_status)
-        self.btn_refresh.grid(row=0, column=3, padx=5)
+        self.btn_refresh.grid(row=0, column=3, padx=5, pady=5)
 
         self.btn_open_folder = ttk.Button(
             self.frame_course,
-            text="Открыть папку курса",
+            text="Открыть папку",
             command=self.open_course_folder,
         )
-        self.btn_open_folder.grid(row=0, column=4, padx=5)
+        self.btn_open_folder.grid(row=0, column=4, padx=5, pady=5)
 
         self.btn_help = ttk.Button(self.frame_course, text="Инструкция", command=self.show_instructions)
-        self.btn_help.grid(row=0, column=5, padx=5)
+        self.btn_help.grid(row=0, column=5, padx=5, pady=5)
+        self.frame_course.grid_columnconfigure(1, weight=1)
 
-        self.frame_status = ttk.LabelFrame(self.main_frame, text="Статус курса", padding=10)
-        self.status_text = scrolledtext.ScrolledText(self.frame_status, height=8, width=80, state="disabled")
-        self.status_text.pack(fill="both", expand=True)
+        self.frame_actions = ttk.LabelFrame(self.main_frame, text="Процесс обработки", padding=10)
+        self.frame_actions.grid_columnconfigure(0, weight=1)
+        self.frame_actions.grid_columnconfigure(1, weight=1)
+        self.frame_actions.grid_columnconfigure(2, weight=1)
+        self.frame_actions.grid_columnconfigure(3, weight=1)
 
-        self.frame_actions = ttk.LabelFrame(self.main_frame, text="Действия", padding=10)
-        self.btn_extract_audio = ttk.Button(self.frame_actions, text="Извлечь аудио", command=self.extract_audio)
-        self.btn_extract_audio.grid(row=0, column=0, padx=5, pady=5)
+        group_prepare = self.create_group(self.frame_actions, "1. Подготовка", row=0, column=0)
+        group_process = self.create_group(self.frame_actions, "2. Обработка", row=0, column=1)
+        group_gpt = self.create_group(self.frame_actions, "3. GPT вручную", row=0, column=2)
+        group_analysis = self.create_group(self.frame_actions, "4. Анализ и экспорт", row=0, column=3)
 
-        self.btn_transcribe = ttk.Button(self.frame_actions, text="Транскрибировать", command=self.transcribe)
-        self.btn_transcribe.grid(row=0, column=1, padx=5, pady=5)
+        self.btn_extract_audio = ttk.Button(group_prepare, text="Извлечь аудио", command=self.extract_audio)
+        self.btn_extract_audio.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
+        group_prepare.grid_columnconfigure(0, weight=1)
 
-        self.btn_cleanup = ttk.Button(self.frame_actions, text="Очистить", command=self.cleanup)
-        self.btn_cleanup.grid(row=0, column=2, padx=5, pady=5)
+        self.btn_transcribe = ttk.Button(group_process, text="Транскрибировать", command=self.transcribe)
+        self.btn_transcribe.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
+        self.btn_cleanup = ttk.Button(group_process, text="Очистить", command=self.cleanup)
+        self.btn_cleanup.grid(row=1, column=0, padx=4, pady=4, sticky="ew")
+        group_process.grid_columnconfigure(0, weight=1)
 
-        self.btn_export_prompts = ttk.Button(self.frame_actions, text="Создать промпты", command=self.export_prompts)
-        self.btn_export_prompts.grid(row=0, column=3, padx=5, pady=5)
+        self.btn_export_prompts = ttk.Button(group_gpt, text="Создать промпты", command=self.export_prompts)
+        self.btn_export_prompts.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
+        self.btn_import_summary = ttk.Button(group_gpt, text="Импорт summary", command=self.import_summary)
+        self.btn_import_summary.grid(row=1, column=0, padx=4, pady=4, sticky="ew")
+        group_gpt.grid_columnconfigure(0, weight=1)
 
-        self.btn_import_summary = ttk.Button(self.frame_actions, text="Импорт summary", command=self.import_summary)
-        self.btn_import_summary.grid(row=0, column=4, padx=5, pady=5)
-
-        self.btn_build_index = ttk.Button(self.frame_actions, text="Собрать индекс", command=self.build_index)
-        self.btn_build_index.grid(row=0, column=5, padx=5, pady=5)
-
+        self.btn_build_index = ttk.Button(group_analysis, text="Собрать индекс", command=self.build_index)
+        self.btn_build_index.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
         self.btn_course_analysis_prompt = ttk.Button(
-            self.frame_actions,
+            group_analysis,
             text="Промпт анализа курса",
             command=self.export_course_analysis_prompt,
         )
-        self.btn_course_analysis_prompt.grid(row=0, column=6, padx=5, pady=5)
-
+        self.btn_course_analysis_prompt.grid(row=1, column=0, padx=4, pady=4, sticky="ew")
         self.btn_export_obsidian = ttk.Button(
-            self.frame_actions,
+            group_analysis,
             text="Экспорт Obsidian",
             command=self.export_obsidian,
         )
-        self.btn_export_obsidian.grid(row=0, column=7, padx=5, pady=5)
+        self.btn_export_obsidian.grid(row=2, column=0, padx=4, pady=4, sticky="ew")
+        group_analysis.grid_columnconfigure(0, weight=1)
 
         self.frame_results = ttk.LabelFrame(self.main_frame, text="Результаты", padding=10)
-        self.btn_open_video = ttk.Button(self.frame_results, text="Открыть video", command=self.open_video_folder)
-        self.btn_open_video.grid(row=0, column=0, padx=5, pady=5)
+        self.frame_results.grid_columnconfigure(0, weight=1)
+        self.frame_results.grid_columnconfigure(1, weight=1)
+        self.frame_results.grid_columnconfigure(2, weight=1)
 
-        self.btn_open_audio = ttk.Button(self.frame_results, text="Открыть audio", command=self.open_audio_folder)
-        self.btn_open_audio.grid(row=0, column=1, padx=5, pady=5)
+        group_sources = self.create_group(self.frame_results, "Исходники", row=0, column=0)
+        group_gpt_materials = self.create_group(self.frame_results, "GPT материалы", row=0, column=1)
+        group_reports_export = self.create_group(self.frame_results, "Отчёты и экспорт", row=0, column=2)
 
-        self.btn_open_prompts = ttk.Button(self.frame_results, text="Открыть prompts", command=self.open_prompts_folder)
-        self.btn_open_prompts.grid(row=0, column=2, padx=5, pady=5)
+        self.btn_open_video = ttk.Button(group_sources, text="Открыть video", command=self.open_video_folder)
+        self.btn_open_video.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
+        self.btn_open_audio = ttk.Button(group_sources, text="Открыть audio", command=self.open_audio_folder)
+        self.btn_open_audio.grid(row=1, column=0, padx=4, pady=4, sticky="ew")
+        group_sources.grid_columnconfigure(0, weight=1)
 
-        self.btn_open_summaries = ttk.Button(self.frame_results, text="Открыть summaries", command=self.open_summaries_folder)
-        self.btn_open_summaries.grid(row=0, column=3, padx=5, pady=5)
+        self.btn_open_prompts = ttk.Button(group_gpt_materials, text="Открыть prompts", command=self.open_prompts_folder)
+        self.btn_open_prompts.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
+        self.btn_open_summaries = ttk.Button(group_gpt_materials, text="Открыть summaries", command=self.open_summaries_folder)
+        self.btn_open_summaries.grid(row=1, column=0, padx=4, pady=4, sticky="ew")
+        group_gpt_materials.grid_columnconfigure(0, weight=1)
 
-        self.btn_open_reports = ttk.Button(self.frame_results, text="Открыть reports", command=self.open_reports_folder)
-        self.btn_open_reports.grid(row=0, column=4, padx=5, pady=5)
-
+        self.btn_open_reports = ttk.Button(group_reports_export, text="Открыть reports", command=self.open_reports_folder)
+        self.btn_open_reports.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
         self.btn_open_summary_index = ttk.Button(
-            self.frame_results,
+            group_reports_export,
             text="Открыть summary_index.md",
             command=self.open_summary_index,
         )
-        self.btn_open_summary_index.grid(row=0, column=5, padx=5, pady=5)
-
+        self.btn_open_summary_index.grid(row=1, column=0, padx=4, pady=4, sticky="ew")
         self.btn_open_analysis_prompt = ttk.Button(
-            self.frame_results,
+            group_reports_export,
             text="Открыть analysis prompt",
             command=self.open_analysis_prompt,
         )
-        self.btn_open_analysis_prompt.grid(row=0, column=6, padx=5, pady=5)
-
+        self.btn_open_analysis_prompt.grid(row=2, column=0, padx=4, pady=4, sticky="ew")
         self.btn_open_obsidian_export = ttk.Button(
-            self.frame_results,
+            group_reports_export,
             text="Открыть Obsidian export",
             command=self.open_obsidian_export,
         )
-        self.btn_open_obsidian_export.grid(row=0, column=7, padx=5, pady=5)
+        self.btn_open_obsidian_export.grid(row=3, column=0, padx=4, pady=4, sticky="ew")
+        group_reports_export.grid_columnconfigure(0, weight=1)
 
-        self.frame_progress = ttk.LabelFrame(self.main_frame, text="Прогресс", padding=10)
+        self.frame_status_progress = ttk.Frame(self.main_frame)
+        self.frame_status_progress.grid_columnconfigure(0, weight=2)
+        self.frame_status_progress.grid_columnconfigure(1, weight=1)
+
+        self.frame_status = ttk.LabelFrame(self.frame_status_progress, text="Статус курса", padding=10)
+        self.status_text = scrolledtext.ScrolledText(self.frame_status, height=8, width=80, state="disabled")
+        self.status_text.pack(fill="both", expand=True)
+
+        self.frame_progress = ttk.LabelFrame(self.frame_status_progress, text="Прогресс", padding=10)
         self.progress_label = ttk.Label(self.frame_progress, text="Прогресс: 0%")
         self.progress_label.pack(anchor="w", pady=(0, 4))
         self.progress_bar = ttk.Progressbar(
@@ -144,7 +171,7 @@ class CourseGUI:
         self.progress_bar.pack(fill="x")
 
         self.frame_log = ttk.LabelFrame(self.main_frame, text="Лог / вывод", padding=10)
-        self.log_text = scrolledtext.ScrolledText(self.frame_log, height=14, width=80)
+        self.log_text = scrolledtext.ScrolledText(self.frame_log, height=10, width=80)
         self.log_text.pack(fill="both", expand=True)
 
         self.footer_label = tk.Label(
@@ -185,25 +212,29 @@ class CourseGUI:
         self.main_frame.pack(side="top", fill="both", expand=True)
 
         self.frame_course.pack(fill="x", padx=10, pady=10)
-        self.frame_status.pack(fill="both", padx=10, pady=(0, 10), expand=True)
         self.frame_actions.pack(fill="x", padx=10, pady=(0, 10))
         self.frame_results.pack(fill="x", padx=10, pady=(0, 10))
-        self.frame_progress.pack(fill="x", padx=10, pady=(0, 10))
+        self.frame_status_progress.pack(fill="x", padx=10, pady=(0, 10))
+        self.frame_status.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        self.frame_progress.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         self.frame_log.pack(fill="both", padx=10, pady=(0, 8), expand=True)
 
     def show_instructions(self) -> None:
         instructions = (
             "1. Создайте курс.\n"
             "2. Откройте папку курса.\n"
-            "3. Положите MP3 в input/audio или видео в input/video.\n"
-            "4. Если вы добавили видео, нажмите \"Извлечь аудио\".\n"
+            "3. Положите видео в input/video или MP3 в input/audio.\n"
+            "4. Если добавлены видео, нажмите \"Извлечь аудио\".\n"
             "5. Нажмите \"Транскрибировать\".\n"
             "6. Нажмите \"Очистить\".\n"
             "7. Нажмите \"Создать промпты\".\n"
-            "8. Откройте prompt-файл и вставьте его в ChatGPT.\n"
-            "9. Сохраните ответ ChatGPT в .md или .txt.\n"
-            "10. Нажмите \"Импорт summary\".\n"
-            "11. Нажмите \"Собрать индекс\"."
+            "8. Скопируйте prompt в ChatGPT и сохраните ответ.\n"
+            "9. Нажмите \"Импорт summary\".\n"
+            "10. Нажмите \"Собрать индекс\".\n"
+            "11. Нажмите \"Промпт анализа курса\".\n"
+            "12. При необходимости вставьте course-level prompt в ChatGPT.\n"
+            "13. Нажмите \"Экспорт Obsidian\".\n"
+            "14. Откройте Obsidian export."
         )
         messagebox.showinfo("Инструкция", instructions)
 
