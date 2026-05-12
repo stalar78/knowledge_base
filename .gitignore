@@ -92,3 +92,4 @@ dist/
 build/
 .coverage
 htmlcov/
+_references/
