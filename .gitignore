@@ -49,6 +49,25 @@ output/gpt_prompts/*
 output/gpt_summaries/*
 !output/gpt_summaries/.gitkeep
 
+# Course input media files
+courses/*/input/audio/*
+!courses/*/input/audio/.gitkeep
+courses/*/input/video/*
+!courses/*/input/video/.gitkeep
+
+# Course generated output files
+courses/*/output/*
+!courses/*/output/**/
+!courses/*/output/**/.gitkeep
+
+# Manual ChatGPT answer scratch files
+manual_answer*.md
+manual_answer*.txt
+
+# Local FFmpeg binary
+tools/ffmpeg/*
+!tools/ffmpeg/.gitkeep
+
 # IDE
 .vscode/
 .idea/
@@ -72,11 +91,4 @@ logs/
 dist/
 build/
 .coverage
-htmlcov/ 
-courses/*/input/audio/* 
-!courses/*/input/audio/.gitkeep 
-courses/*/input/video/* 
-!courses/*/input/video/.gitkeep 
-
-tools/ffmpeg/*
-!tools/ffmpeg/.gitkeep
+htmlcov/

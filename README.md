@@ -1068,7 +1068,7 @@ MIT
 
 ## Stage 6.1: Video to MP3 extraction
 
-This stage adds a standard video-to-MP3 extraction step before transcription.
+This stage adds a standard FFmpeg-based video-to-MP3 extraction step before transcription.
 
 ### FFmpeg requirement
 
@@ -1077,22 +1077,28 @@ You need FFmpeg available in one of two ways:
 - Option A: place `ffmpeg.exe` into `tools/ffmpeg/ffmpeg.exe`
 - Option B: install FFmpeg and make `ffmpeg` available in `PATH`
 
-### Course workflow
+### Course command
 
-1. Put video files into:
-   `courses/<slug>/input/video/`
-2. Run extraction:
-   ```bash
-   python -m src.course_extract_audio <slug> --overwrite
-   ```
-3. Extracted MP3 files will be saved to:
-   `courses/<slug>/input/audio/`
-4. Then run transcription as usual.
+```bash
+python -m src.course_extract_audio <course_slug> --overwrite
+```
+
+Optional flags:
+- `--recursive`
+- `--bitrate 192k`
+- `--courses-dir courses`
+
+Input/output paths:
+- Input videos: `courses/<course_slug>/input/video/`
+- Output MP3: `courses/<course_slug>/input/audio/`
 
 ### GUI workflow
 
-In the desktop app, use the button:
+1. Put videos into `courses/<course_slug>/input/video/`.
+2. Click `Извлечь аудио`.
+3. Then click `Транскрибировать`.
 
-- `Извлечь аудио`
+### Repository security note
 
-After extraction, run `Транскрибировать`.
+- `tools/ffmpeg/ffmpeg.exe` must not be committed.
+- Media files (video/audio) and generated course outputs must not be committed.
