@@ -88,6 +88,13 @@ class CourseGUI:
         )
         self.btn_course_analysis_prompt.grid(row=0, column=6, padx=5, pady=5)
 
+        self.btn_export_obsidian = ttk.Button(
+            self.frame_actions,
+            text="Экспорт Obsidian",
+            command=self.export_obsidian,
+        )
+        self.btn_export_obsidian.grid(row=0, column=7, padx=5, pady=5)
+
         self.frame_results = ttk.LabelFrame(self.main_frame, text="Результаты", padding=10)
         self.btn_open_video = ttk.Button(self.frame_results, text="Открыть video", command=self.open_video_folder)
         self.btn_open_video.grid(row=0, column=0, padx=5, pady=5)
@@ -117,6 +124,13 @@ class CourseGUI:
             command=self.open_analysis_prompt,
         )
         self.btn_open_analysis_prompt.grid(row=0, column=6, padx=5, pady=5)
+
+        self.btn_open_obsidian_export = ttk.Button(
+            self.frame_results,
+            text="Открыть Obsidian export",
+            command=self.open_obsidian_export,
+        )
+        self.btn_open_obsidian_export.grid(row=0, column=7, padx=5, pady=5)
 
         self.frame_progress = ttk.LabelFrame(self.main_frame, text="Прогресс", padding=10)
         self.progress_label = ttk.Label(self.frame_progress, text="Прогресс: 0%")
@@ -155,6 +169,7 @@ class CourseGUI:
             self.btn_import_summary,
             self.btn_build_index,
             self.btn_course_analysis_prompt,
+            self.btn_export_obsidian,
             self.btn_open_video,
             self.btn_open_audio,
             self.btn_open_prompts,
@@ -162,6 +177,7 @@ class CourseGUI:
             self.btn_open_reports,
             self.btn_open_summary_index,
             self.btn_open_analysis_prompt,
+            self.btn_open_obsidian_export,
         ]
 
     def _layout_widgets(self) -> None:
@@ -542,6 +558,33 @@ class CourseGUI:
             self.log(f"[Ошибка] Не удалось открыть файл: {exc}")
             messagebox.showerror("Ошибка", "Не удалось открыть course_analysis_prompt.md.")
 
+    def open_obsidian_export(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        if self.command_running:
+            messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
+            return
+
+        self.clear_log()
+        self.set_progress_idle()
+
+        export_dir = Path("courses") / slug / "output" / "obsidian_export"
+        if not export_dir.is_dir():
+            warning = "Папка obsidian_export ещё не создана. Сначала выполните 'Экспорт Obsidian'."
+            self.log(f"[Предупреждение] {warning}")
+            messagebox.showwarning("Папка не найдена", warning)
+            return
+
+        try:
+            os.startfile(str(export_dir.resolve()))
+            self.set_progress_success()
+            self.log(f"[Готово] Открыта папка Obsidian export: {export_dir}")
+        except Exception as exc:
+            self.set_progress_error()
+            self.log(f"[Ошибка] Не удалось открыть папку: {exc}")
+            messagebox.showerror("Ошибка", "Не удалось открыть папку obsidian_export.")
+
     def transcribe(self) -> None:
         slug = self.get_slug()
         if not slug:
@@ -610,6 +653,21 @@ class CourseGUI:
             args,
             "Промпт анализа курса создан.",
             "Не удалось создать промпт анализа курса.",
+        )
+
+    def export_obsidian(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+
+        if not self.prepare_action("Запуск экспорта Obsidian..."):
+            return
+
+        args = [sys.executable, "-m", "src.course_export_obsidian", slug, "--overwrite"]
+        self.run_command_async(
+            args,
+            "Экспорт Obsidian завершён.",
+            "Не удалось выполнить экспорт Obsidian.",
         )
 
     def import_summary(self) -> None:

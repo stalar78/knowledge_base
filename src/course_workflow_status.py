@@ -211,8 +211,14 @@ def determine_next_step(counts: Dict[str, int], course_root: Path) -> Tuple[str,
         cmd = f"python -m src.course_export_analysis_prompt {slug} --overwrite"
         return step, cmd
 
-    step = "Course workspace is ready for manual course-level analysis"
-    cmd = "Open course_analysis_prompt.md, paste it into ChatGPT, and save the answer manually."
+    obsidian_home = course_root / "output" / "obsidian_export" / "00_Course_Home.md"
+    if not obsidian_home.is_file():
+        step = "Export Obsidian vault"
+        cmd = f"python -m src.course_export_obsidian {slug} --overwrite"
+        return step, cmd
+
+    step = "Course workspace is ready for Obsidian review"
+    cmd = "Open output/obsidian_export/00_Course_Home.md in Obsidian."
     return step, cmd
 
 

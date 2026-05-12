@@ -305,6 +305,29 @@ def menu_export_course_analysis_prompt() -> None:
         print("Course analysis prompt export failed.")
 
 
+def menu_export_obsidian() -> None:
+    """Option 10: Export Obsidian vault."""
+    print("\n--- Export Obsidian vault ---")
+    slug = ask_text("Course slug")
+    if not slug:
+        print("Slug cannot be empty. Returning to menu.")
+        return
+    overwrite = ask_yes_no("Overwrite existing export files?", default=True)
+    recursive = ask_yes_no("Scan summaries recursively?", default=False)
+
+    args = [sys.executable, "-m", "src.course_export_obsidian", slug]
+    if overwrite:
+        args.append("--overwrite")
+    if recursive:
+        args.append("--recursive")
+
+    success = run_command(args)
+    if success:
+        print("Obsidian export completed successfully.")
+    else:
+        print("Obsidian export failed.")
+
+
 def print_menu() -> None:
     """Print the main menu."""
     print("\n" + "=" * 50)
@@ -319,7 +342,8 @@ def print_menu() -> None:
     print("7. Import manual ChatGPT summary")
     print("8. Build summary index")
     print("9. Export course analysis prompt")
-    print("10. Exit")
+    print("10. Export Obsidian vault")
+    print("11. Exit")
     print("=" * 50)
 
 
@@ -327,7 +351,7 @@ def main() -> None:
     """Main loop."""
     while True:
         print_menu()
-        choice = ask_text("Choose an option (1-10)", default="")
+        choice = ask_text("Choose an option (1-11)", default="")
         if not choice:
             continue
         if choice == "1":
@@ -349,11 +373,13 @@ def main() -> None:
         elif choice == "9":
             menu_export_course_analysis_prompt()
         elif choice == "10":
+            menu_export_obsidian()
+        elif choice == "11":
             print("\nExiting. Goodbye!")
             sys.exit(0)
         else:
             print(
-                f"Invalid choice '{choice}'. Please enter a number between 1 and 10.")
+                f"Invalid choice '{choice}'. Please enter a number between 1 and 11.")
         input("\nPress Enter to continue...")
 
 
