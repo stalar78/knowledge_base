@@ -205,8 +205,14 @@ def determine_next_step(counts: Dict[str, int], course_root: Path) -> Tuple[str,
         )
         return step, cmd
 
-    step = "Course workspace is ready for course-level analysis"
-    cmd = "No immediate command. Proceed to course-level analysis stage."
+    analysis_prompt = course_root / "output" / "gpt_prompts" / "course_analysis_prompt.md"
+    if not analysis_prompt.is_file():
+        step = "Export course analysis prompt"
+        cmd = f"python -m src.course_export_analysis_prompt {slug} --overwrite"
+        return step, cmd
+
+    step = "Course workspace is ready for manual course-level analysis"
+    cmd = "Open course_analysis_prompt.md, paste it into ChatGPT, and save the answer manually."
     return step, cmd
 
 

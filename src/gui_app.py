@@ -81,6 +81,13 @@ class CourseGUI:
         self.btn_build_index = ttk.Button(self.frame_actions, text="Собрать индекс", command=self.build_index)
         self.btn_build_index.grid(row=0, column=5, padx=5, pady=5)
 
+        self.btn_course_analysis_prompt = ttk.Button(
+            self.frame_actions,
+            text="Промпт анализа курса",
+            command=self.export_course_analysis_prompt,
+        )
+        self.btn_course_analysis_prompt.grid(row=0, column=6, padx=5, pady=5)
+
         self.frame_results = ttk.LabelFrame(self.main_frame, text="Результаты", padding=10)
         self.btn_open_video = ttk.Button(self.frame_results, text="Открыть video", command=self.open_video_folder)
         self.btn_open_video.grid(row=0, column=0, padx=5, pady=5)
@@ -103,6 +110,13 @@ class CourseGUI:
             command=self.open_summary_index,
         )
         self.btn_open_summary_index.grid(row=0, column=5, padx=5, pady=5)
+
+        self.btn_open_analysis_prompt = ttk.Button(
+            self.frame_results,
+            text="Открыть analysis prompt",
+            command=self.open_analysis_prompt,
+        )
+        self.btn_open_analysis_prompt.grid(row=0, column=6, padx=5, pady=5)
 
         self.frame_progress = ttk.LabelFrame(self.main_frame, text="Прогресс", padding=10)
         self.progress_label = ttk.Label(self.frame_progress, text="Прогресс: 0%")
@@ -140,12 +154,14 @@ class CourseGUI:
             self.btn_export_prompts,
             self.btn_import_summary,
             self.btn_build_index,
+            self.btn_course_analysis_prompt,
             self.btn_open_video,
             self.btn_open_audio,
             self.btn_open_prompts,
             self.btn_open_summaries,
             self.btn_open_reports,
             self.btn_open_summary_index,
+            self.btn_open_analysis_prompt,
         ]
 
     def _layout_widgets(self) -> None:
@@ -499,6 +515,33 @@ class CourseGUI:
             self.log(f"[Ошибка] Не удалось открыть файл: {exc}")
             messagebox.showerror("Ошибка", "Не удалось открыть summary_index.md.")
 
+    def open_analysis_prompt(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        if self.command_running:
+            messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
+            return
+
+        self.clear_log()
+        self.set_progress_idle()
+
+        prompt_path = Path("courses") / slug / "output" / "gpt_prompts" / "course_analysis_prompt.md"
+        if not prompt_path.is_file():
+            warning = "Файл course_analysis_prompt.md ещё не создан. Сначала выполните 'Промпт анализа курса'."
+            self.log(f"[Предупреждение] {warning}")
+            messagebox.showwarning("Файл не найден", warning)
+            return
+
+        try:
+            os.startfile(str(prompt_path.resolve()))
+            self.set_progress_success()
+            self.log(f"[Готово] Открыт файл course_analysis_prompt.md: {prompt_path}")
+        except Exception as exc:
+            self.set_progress_error()
+            self.log(f"[Ошибка] Не удалось открыть файл: {exc}")
+            messagebox.showerror("Ошибка", "Не удалось открыть course_analysis_prompt.md.")
+
     def transcribe(self) -> None:
         slug = self.get_slug()
         if not slug:
@@ -553,6 +596,21 @@ class CourseGUI:
 
         args = [sys.executable, "-m", "src.course_build_index", slug, "--overwrite"]
         self.run_command_async(args, "Сборка индекса завершена.", "Не удалось собрать индекс.")
+
+    def export_course_analysis_prompt(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+
+        if not self.prepare_action("Запуск создания промпта анализа курса..."):
+            return
+
+        args = [sys.executable, "-m", "src.course_export_analysis_prompt", slug, "--overwrite"]
+        self.run_command_async(
+            args,
+            "Промпт анализа курса создан.",
+            "Не удалось создать промпт анализа курса.",
+        )
 
     def import_summary(self) -> None:
         slug = self.get_slug()

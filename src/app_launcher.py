@@ -282,6 +282,29 @@ def menu_build_index() -> None:
         print("Index build failed.")
 
 
+def menu_export_course_analysis_prompt() -> None:
+    """Option 9: Export course analysis prompt."""
+    print("\n--- Export course analysis prompt ---")
+    slug = ask_text("Course slug")
+    if not slug:
+        print("Slug cannot be empty. Returning to menu.")
+        return
+    overwrite = ask_yes_no("Overwrite existing analysis prompt?", default=True)
+    recursive = ask_yes_no("Scan summaries recursively?", default=False)
+
+    args = [sys.executable, "-m", "src.course_export_analysis_prompt", slug]
+    if overwrite:
+        args.append("--overwrite")
+    if recursive:
+        args.append("--recursive")
+
+    success = run_command(args)
+    if success:
+        print("Course analysis prompt export completed successfully.")
+    else:
+        print("Course analysis prompt export failed.")
+
+
 def print_menu() -> None:
     """Print the main menu."""
     print("\n" + "=" * 50)
@@ -295,7 +318,8 @@ def print_menu() -> None:
     print("6. Export ChatGPT prompts")
     print("7. Import manual ChatGPT summary")
     print("8. Build summary index")
-    print("9. Exit")
+    print("9. Export course analysis prompt")
+    print("10. Exit")
     print("=" * 50)
 
 
@@ -303,7 +327,7 @@ def main() -> None:
     """Main loop."""
     while True:
         print_menu()
-        choice = ask_text("Choose an option (1-9)", default="")
+        choice = ask_text("Choose an option (1-10)", default="")
         if not choice:
             continue
         if choice == "1":
@@ -323,11 +347,13 @@ def main() -> None:
         elif choice == "8":
             menu_build_index()
         elif choice == "9":
+            menu_export_course_analysis_prompt()
+        elif choice == "10":
             print("\nExiting. Goodbye!")
             sys.exit(0)
         else:
             print(
-                f"Invalid choice '{choice}'. Please enter a number between 1 and 9.")
+                f"Invalid choice '{choice}'. Please enter a number between 1 and 10.")
         input("\nPress Enter to continue...")
 
 
