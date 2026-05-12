@@ -81,6 +81,29 @@ class CourseGUI:
         self.btn_build_index = ttk.Button(self.frame_actions, text="Собрать индекс", command=self.build_index)
         self.btn_build_index.grid(row=0, column=5, padx=5, pady=5)
 
+        self.frame_results = ttk.LabelFrame(self.main_frame, text="Результаты", padding=10)
+        self.btn_open_video = ttk.Button(self.frame_results, text="Открыть video", command=self.open_video_folder)
+        self.btn_open_video.grid(row=0, column=0, padx=5, pady=5)
+
+        self.btn_open_audio = ttk.Button(self.frame_results, text="Открыть audio", command=self.open_audio_folder)
+        self.btn_open_audio.grid(row=0, column=1, padx=5, pady=5)
+
+        self.btn_open_prompts = ttk.Button(self.frame_results, text="Открыть prompts", command=self.open_prompts_folder)
+        self.btn_open_prompts.grid(row=0, column=2, padx=5, pady=5)
+
+        self.btn_open_summaries = ttk.Button(self.frame_results, text="Открыть summaries", command=self.open_summaries_folder)
+        self.btn_open_summaries.grid(row=0, column=3, padx=5, pady=5)
+
+        self.btn_open_reports = ttk.Button(self.frame_results, text="Открыть reports", command=self.open_reports_folder)
+        self.btn_open_reports.grid(row=0, column=4, padx=5, pady=5)
+
+        self.btn_open_summary_index = ttk.Button(
+            self.frame_results,
+            text="Открыть summary_index.md",
+            command=self.open_summary_index,
+        )
+        self.btn_open_summary_index.grid(row=0, column=5, padx=5, pady=5)
+
         self.frame_progress = ttk.LabelFrame(self.main_frame, text="Прогресс", padding=10)
         self.progress_label = ttk.Label(self.frame_progress, text="Прогресс: 0%")
         self.progress_label.pack(anchor="w", pady=(0, 4))
@@ -117,6 +140,12 @@ class CourseGUI:
             self.btn_export_prompts,
             self.btn_import_summary,
             self.btn_build_index,
+            self.btn_open_video,
+            self.btn_open_audio,
+            self.btn_open_prompts,
+            self.btn_open_summaries,
+            self.btn_open_reports,
+            self.btn_open_summary_index,
         ]
 
     def _layout_widgets(self) -> None:
@@ -126,6 +155,7 @@ class CourseGUI:
         self.frame_course.pack(fill="x", padx=10, pady=10)
         self.frame_status.pack(fill="both", padx=10, pady=(0, 10), expand=True)
         self.frame_actions.pack(fill="x", padx=10, pady=(0, 10))
+        self.frame_results.pack(fill="x", padx=10, pady=(0, 10))
         self.frame_progress.pack(fill="x", padx=10, pady=(0, 10))
         self.frame_log.pack(fill="both", padx=10, pady=(0, 8), expand=True)
 
@@ -356,6 +386,118 @@ class CourseGUI:
             self.set_progress_error()
             self.log(f"[Ошибка] Не удалось открыть папку: {exc}")
             messagebox.showerror("Ошибка", "Не удалось открыть папку курса.")
+
+    def open_path(self, path: Path, missing_title: str, missing_message: str, success_message: str) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        if self.command_running:
+            messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
+            return
+
+        self.clear_log()
+        self.set_progress_idle()
+
+        if not path.exists():
+            self.log(f"[Предупреждение] {missing_message}")
+            messagebox.showwarning(missing_title, missing_message)
+            return
+
+        try:
+            os.startfile(str(path.resolve()))
+            self.set_progress_success()
+            self.log(f"[Готово] {success_message}")
+        except Exception as exc:
+            self.set_progress_error()
+            self.log(f"[Ошибка] Не удалось открыть путь: {exc}")
+            messagebox.showerror("Ошибка", "Не удалось открыть указанный путь.")
+
+    def open_video_folder(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        path = Path("courses") / slug / "input" / "video"
+        self.open_path(
+            path,
+            "Папка не найдена",
+            f"Папка с видео не существует:\n{path}",
+            f"Открыта папка с видео: {path}",
+        )
+
+    def open_audio_folder(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        path = Path("courses") / slug / "input" / "audio"
+        self.open_path(
+            path,
+            "Папка не найдена",
+            f"Папка с аудио не существует:\n{path}",
+            f"Открыта папка с аудио: {path}",
+        )
+
+    def open_prompts_folder(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        path = Path("courses") / slug / "output" / "gpt_prompts"
+        self.open_path(
+            path,
+            "Папка не найдена",
+            f"Папка с prompts не существует:\n{path}",
+            f"Открыта папка с prompts: {path}",
+        )
+
+    def open_summaries_folder(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        path = Path("courses") / slug / "output" / "gpt_summaries"
+        self.open_path(
+            path,
+            "Папка не найдена",
+            f"Папка с summaries не существует:\n{path}",
+            f"Открыта папка с summaries: {path}",
+        )
+
+    def open_reports_folder(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        path = Path("courses") / slug / "output" / "reports"
+        self.open_path(
+            path,
+            "Папка не найдена",
+            f"Папка с reports не существует:\n{path}",
+            f"Открыта папка с reports: {path}",
+        )
+
+    def open_summary_index(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+        if self.command_running:
+            messagebox.showwarning("Ошибка", "Дождитесь завершения текущей команды.")
+            return
+
+        self.clear_log()
+        self.set_progress_idle()
+
+        index_path = Path("courses") / slug / "output" / "reports" / "summary_index.md"
+        if not index_path.is_file():
+            warning = "Файл summary_index.md ещё не создан. Сначала выполните 'Собрать индекс'."
+            self.log(f"[Предупреждение] {warning}")
+            messagebox.showwarning("Файл не найден", warning)
+            return
+
+        try:
+            os.startfile(str(index_path.resolve()))
+            self.set_progress_success()
+            self.log(f"[Готово] Открыт файл summary_index.md: {index_path}")
+        except Exception as exc:
+            self.set_progress_error()
+            self.log(f"[Ошибка] Не удалось открыть файл: {exc}")
+            messagebox.showerror("Ошибка", "Не удалось открыть summary_index.md.")
 
     def transcribe(self) -> None:
         slug = self.get_slug()
