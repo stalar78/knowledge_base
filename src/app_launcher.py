@@ -111,7 +111,7 @@ def menu_workflow_status() -> None:
 
 
 def menu_transcribe() -> None:
-    """Option 3: Transcribe course."""
+    """Option 4: Transcribe course."""
     print("\n--- Transcribe course ---")
     slug = ask_text("Course slug")
     if not slug:
@@ -137,8 +137,35 @@ def menu_transcribe() -> None:
         print("Transcription failed.")
 
 
+def menu_extract_audio() -> None:
+    """Option 3: Extract audio from course video files."""
+    print("\n--- Extract audio from course videos ---")
+    slug = ask_text("Course slug")
+    if not slug:
+        print("Slug cannot be empty. Returning to menu.")
+        return
+
+    overwrite = ask_yes_no("Overwrite existing MP3 files?", default=True)
+    recursive = ask_yes_no("Scan subfolders recursively?", default=False)
+    bitrate = ask_text("MP3 bitrate", default="192k")
+
+    args = [sys.executable, "-m", "src.course_extract_audio", slug]
+    if overwrite:
+        args.append("--overwrite")
+    if recursive:
+        args.append("--recursive")
+    if bitrate and bitrate != "192k":
+        args.extend(["--bitrate", bitrate])
+
+    success = run_command(args)
+    if success:
+        print("Audio extraction completed successfully.")
+    else:
+        print("Audio extraction failed.")
+
+
 def menu_cleanup() -> None:
-    """Option 4: Clean course transcripts."""
+    """Option 5: Clean course transcripts."""
     print("\n--- Clean course transcripts ---")
     slug = ask_text("Course slug")
     if not slug:
@@ -161,7 +188,7 @@ def menu_cleanup() -> None:
 
 
 def menu_export_prompts() -> None:
-    """Option 5: Export ChatGPT prompts."""
+    """Option 6: Export ChatGPT prompts."""
     print("\n--- Export ChatGPT prompts ---")
     slug = ask_text("Course slug")
     if not slug:
@@ -184,7 +211,7 @@ def menu_export_prompts() -> None:
 
 
 def menu_import_summary() -> None:
-    """Option 6: Import manual ChatGPT summary."""
+    """Option 7: Import manual ChatGPT summary."""
     print("\n--- Import manual ChatGPT summary ---")
     slug = ask_text("Course slug")
     if not slug:
@@ -233,7 +260,7 @@ def menu_import_summary() -> None:
 
 
 def menu_build_index() -> None:
-    """Option 7: Build summary index."""
+    """Option 8: Build summary index."""
     print("\n--- Build summary index ---")
     slug = ask_text("Course slug")
     if not slug:
@@ -262,12 +289,13 @@ def print_menu() -> None:
     print("=" * 50)
     print("1. Create new course workspace")
     print("2. Show course workflow status")
-    print("3. Transcribe course")
-    print("4. Clean course transcripts")
-    print("5. Export ChatGPT prompts")
-    print("6. Import manual ChatGPT summary")
-    print("7. Build summary index")
-    print("8. Exit")
+    print("3. Extract audio from video")
+    print("4. Transcribe course")
+    print("5. Clean course transcripts")
+    print("6. Export ChatGPT prompts")
+    print("7. Import manual ChatGPT summary")
+    print("8. Build summary index")
+    print("9. Exit")
     print("=" * 50)
 
 
@@ -275,7 +303,7 @@ def main() -> None:
     """Main loop."""
     while True:
         print_menu()
-        choice = ask_text("Choose an option (1-8)", default="")
+        choice = ask_text("Choose an option (1-9)", default="")
         if not choice:
             continue
         if choice == "1":
@@ -283,21 +311,23 @@ def main() -> None:
         elif choice == "2":
             menu_workflow_status()
         elif choice == "3":
-            menu_transcribe()
+            menu_extract_audio()
         elif choice == "4":
-            menu_cleanup()
+            menu_transcribe()
         elif choice == "5":
-            menu_export_prompts()
+            menu_cleanup()
         elif choice == "6":
-            menu_import_summary()
+            menu_export_prompts()
         elif choice == "7":
-            menu_build_index()
+            menu_import_summary()
         elif choice == "8":
+            menu_build_index()
+        elif choice == "9":
             print("\nExiting. Goodbye!")
             sys.exit(0)
         else:
             print(
-                f"Invalid choice '{choice}'. Please enter a number between 1 and 8.")
+                f"Invalid choice '{choice}'. Please enter a number between 1 and 9.")
         input("\nPress Enter to continue...")
 
 

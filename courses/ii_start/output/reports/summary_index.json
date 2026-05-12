@@ -1,0 +1,13 @@
+{
+  "summary_count": 1,
+  "files": [
+    {
+      "summary_file": "C:/Users/stala/OneDrive/Рабочий стол/Dev/knowledge_base/courses/ii_start/output/gpt_summaries/1.md",
+      "title": "GPT Summary: 1.txt",
+      "source_transcript": "C:\\Users\\stala\\OneDrive\\Рабочий стол\\Dev\\knowledge_base\\courses\\ii_start\\output\\cleaned\\1.txt",
+      "manual_answer_file": "C:\\Users\\stala\\OneDrive\\Рабочий стол\\Dev\\knowledge_base\\manual_answer.md",
+      "import_mode": "manual ChatGPT",
+      "word_count": 806
+    }
+  ]
+}

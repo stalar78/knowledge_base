@@ -149,16 +149,19 @@ def determine_next_step(counts: Dict[str, int], course_root: Path) -> Tuple[str,
     rel_path = course_root.relative_to(
         Path.cwd()) if course_root.is_relative_to(Path.cwd()) else course_root
 
-    total_input = counts["input_audio"] + counts["input_video"]
-
-    if total_input == 0:
+    if counts["input_audio"] == 0 and counts["input_video"] == 0:
         step = "Add audio/video files"
         cmd = f"Place audio/video files into {rel_path}/input/audio/ or {rel_path}/input/video/"
         return step, cmd
 
+    if counts["input_video"] > 0 and counts["input_audio"] == 0:
+        step = "Extract audio from video"
+        cmd = f"python -m src.course_extract_audio {slug} --overwrite"
+        return step, cmd
+
     if counts["raw_transcripts"] == 0:
-        step = "Transcribe course audio/video files"
-        cmd = f"python -m src.transcribe_batch {rel_path}/input/audio --overwrite"
+        step = "Transcribe course audio files"
+        cmd = f"python -m src.course_transcribe {slug} --overwrite"
         return step, cmd
 
     if counts["cleaned_transcripts"] == 0:

@@ -1,0 +1,12 @@
+{
+  "course_slug": "ii_start",
+  "title": "Ii Start",
+  "created_by": "GPT Course Knowledge Extractor",
+  "workflow": [
+    "transcription",
+    "cleanup",
+    "manual_prompt_export",
+    "manual_summary_import",
+    "summary_index"
+  ]
+}

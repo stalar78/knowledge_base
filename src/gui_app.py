@@ -63,20 +63,23 @@ class CourseGUI:
         self.status_text.pack(fill="both", expand=True)
 
         self.frame_actions = ttk.LabelFrame(self.main_frame, text="Действия", padding=10)
+        self.btn_extract_audio = ttk.Button(self.frame_actions, text="Извлечь аудио", command=self.extract_audio)
+        self.btn_extract_audio.grid(row=0, column=0, padx=5, pady=5)
+
         self.btn_transcribe = ttk.Button(self.frame_actions, text="Транскрибировать", command=self.transcribe)
-        self.btn_transcribe.grid(row=0, column=0, padx=5, pady=5)
+        self.btn_transcribe.grid(row=0, column=1, padx=5, pady=5)
 
         self.btn_cleanup = ttk.Button(self.frame_actions, text="Очистить", command=self.cleanup)
-        self.btn_cleanup.grid(row=0, column=1, padx=5, pady=5)
+        self.btn_cleanup.grid(row=0, column=2, padx=5, pady=5)
 
         self.btn_export_prompts = ttk.Button(self.frame_actions, text="Создать промпты", command=self.export_prompts)
-        self.btn_export_prompts.grid(row=0, column=2, padx=5, pady=5)
-
-        self.btn_build_index = ttk.Button(self.frame_actions, text="Собрать индекс", command=self.build_index)
-        self.btn_build_index.grid(row=0, column=3, padx=5, pady=5)
+        self.btn_export_prompts.grid(row=0, column=3, padx=5, pady=5)
 
         self.btn_import_summary = ttk.Button(self.frame_actions, text="Импорт summary", command=self.import_summary)
         self.btn_import_summary.grid(row=0, column=4, padx=5, pady=5)
+
+        self.btn_build_index = ttk.Button(self.frame_actions, text="Собрать индекс", command=self.build_index)
+        self.btn_build_index.grid(row=0, column=5, padx=5, pady=5)
 
         self.frame_progress = ttk.LabelFrame(self.main_frame, text="Прогресс", padding=10)
         self.progress_label = ttk.Label(self.frame_progress, text="Прогресс: 0%")
@@ -108,11 +111,12 @@ class CourseGUI:
             self.btn_refresh,
             self.btn_open_folder,
             self.btn_help,
+            self.btn_extract_audio,
             self.btn_transcribe,
             self.btn_cleanup,
             self.btn_export_prompts,
-            self.btn_build_index,
             self.btn_import_summary,
+            self.btn_build_index,
         ]
 
     def _layout_widgets(self) -> None:
@@ -130,13 +134,14 @@ class CourseGUI:
             "1. Создайте курс.\n"
             "2. Откройте папку курса.\n"
             "3. Положите MP3 в input/audio или видео в input/video.\n"
-            "4. Нажмите \"Транскрибировать\".\n"
-            "5. Нажмите \"Очистить\".\n"
-            "6. Нажмите \"Создать промпты\".\n"
-            "7. Откройте prompt-файл и вставьте его в ChatGPT.\n"
-            "8. Сохраните ответ ChatGPT в .md или .txt.\n"
-            "9. Нажмите \"Импорт summary\".\n"
-            "10. Нажмите \"Собрать индекс\"."
+            "4. Если вы добавили видео, нажмите \"Извлечь аудио\".\n"
+            "5. Нажмите \"Транскрибировать\".\n"
+            "6. Нажмите \"Очистить\".\n"
+            "7. Нажмите \"Создать промпты\".\n"
+            "8. Откройте prompt-файл и вставьте его в ChatGPT.\n"
+            "9. Сохраните ответ ChatGPT в .md или .txt.\n"
+            "10. Нажмите \"Импорт summary\".\n"
+            "11. Нажмите \"Собрать индекс\"."
         )
         messagebox.showinfo("Инструкция", instructions)
 
@@ -362,6 +367,17 @@ class CourseGUI:
 
         args = [sys.executable, "-m", "src.course_transcribe", slug, "--overwrite"]
         self.run_command_async(args, "Транскрибация завершена.", "Не удалось выполнить транскрибацию.")
+
+    def extract_audio(self) -> None:
+        slug = self.get_slug()
+        if not slug:
+            return
+
+        if not self.prepare_action("Запуск извлечения аудио из видео..."):
+            return
+
+        args = [sys.executable, "-m", "src.course_extract_audio", slug, "--overwrite"]
+        self.run_command_async(args, "Извлечение аудио завершено.", "Не удалось извлечь аудио из видео.")
 
     def cleanup(self) -> None:
         slug = self.get_slug()

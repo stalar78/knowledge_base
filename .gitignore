@@ -77,3 +77,6 @@ courses/*/input/audio/*
 !courses/*/input/audio/.gitkeep 
 courses/*/input/video/* 
 !courses/*/input/video/.gitkeep 
+
+tools/ffmpeg/*
+!tools/ffmpeg/.gitkeep

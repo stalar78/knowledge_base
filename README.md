@@ -987,6 +987,30 @@ This update improves usability on Windows and localizes the GUI into Russian.
 python -m src.gui_app
 ```
 
+#### Stage 6.0.2 usability notes
+- Кнопки GUI запускают задачи в фоне (интерфейс не зависает во время длительных операций).
+- Прогресс-бар показывает примерный статус выполнения: `0% -> 10% -> 50% -> 100%`.
+- Внизу окна доступна ссылка `by StalarVisison`, открывающая `https://stalarvision.ru/`.
+- Для обычного запуска без консоли используйте `run_gui.vbs`.
+- Для отладки с консолью используйте `run_gui.bat`.
+
+#### Stage 6.0.3 usability notes
+- Во время выполнения долгих задач прогресс-бар работает в анимированном режиме, чтобы было видно, что процесс не завис.
+- После завершения команды прогресс становится `100%`, а при ошибке сбрасывается в состояние ошибки.
+- Для длинных аудио на CPU транскрибация может занимать примерно 20-60 минут.
+
+#### Быстрый сценарий работы в GUI
+1. Создайте курс.
+2. Откройте папку курса.
+3. Положите MP3/видео в `input/audio` или `input/video`.
+4. Нажмите `Транскрибировать`.
+5. Нажмите `Очистить`.
+6. Нажмите `Создать промпты`.
+7. Откройте prompt-файл и вставьте его в ChatGPT.
+8. Сохраните ответ ChatGPT в `.md` или `.txt`.
+9. Нажмите `Импорт summary`.
+10. Нажмите `Собрать индекс`.
+
 #### GUI layout
 - **Выбор курса** – поле кода курса и кнопки создания/обновления/открытия папки.
 - **Статус курса** – прокручиваемое поле с результатом `course_workflow_status`.
@@ -1041,3 +1065,34 @@ Planned stages (see `docs/ROADMAP.md`):
 ### License
 
 MIT
+
+## Stage 6.1: Video to MP3 extraction
+
+This stage adds a standard video-to-MP3 extraction step before transcription.
+
+### FFmpeg requirement
+
+You need FFmpeg available in one of two ways:
+
+- Option A: place `ffmpeg.exe` into `tools/ffmpeg/ffmpeg.exe`
+- Option B: install FFmpeg and make `ffmpeg` available in `PATH`
+
+### Course workflow
+
+1. Put video files into:
+   `courses/<slug>/input/video/`
+2. Run extraction:
+   ```bash
+   python -m src.course_extract_audio <slug> --overwrite
+   ```
+3. Extracted MP3 files will be saved to:
+   `courses/<slug>/input/audio/`
+4. Then run transcription as usual.
+
+### GUI workflow
+
+In the desktop app, use the button:
+
+- `Извлечь аудио`
+
+After extraction, run `Транскрибировать`.
