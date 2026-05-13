@@ -2,6 +2,7 @@
 """Extract MP3 audio from video files using FFmpeg."""
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -29,6 +30,19 @@ def discover_video_files(input_path: Path, recursive: bool = False) -> list[Path
     files = [p for p in input_path.glob(pattern) if is_supported_video_file(p)]
     files.sort(key=lambda p: str(p).lower())
     return files
+
+
+def get_subprocess_startup_kwargs() -> dict:
+    if os.name != "nt":
+        return {}
+
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = 0
+    return {
+        "startupinfo": startupinfo,
+        "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    }
 
 
 def extract_audio_file(
@@ -63,7 +77,15 @@ def extract_audio_file(
     ]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            **get_subprocess_startup_kwargs(),
+        )
     except Exception as exc:
         print(f"Failed to run FFmpeg for '{video_path.name}': {exc}", file=sys.stderr)
         return "failed"

@@ -14,6 +14,7 @@ import contextlib
 import io
 import runpy
 import sys
+import traceback
 from pathlib import Path
 from typing import Literal
 import tkinter as tk
@@ -69,10 +70,15 @@ def run_module_in_process(module_name: str, module_args: list[str]) -> tuple[str
                 return_code = 1
                 error = str(exc)
                 print(f"Error: failed to execute module '{module_name}': {exc}", file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
     finally:
         sys.argv = original_argv
 
-    return stdout_stream.getvalue(), stderr_stream.getvalue(), return_code, error
+    stdout_text = stdout_stream.getvalue()
+    stderr_text = stderr_stream.getvalue()
+    if return_code not in (None, 0) and not stderr_text.strip():
+        stderr_text = f"Module exited with code {return_code} without stderr output.\n"
+    return stdout_text, stderr_text, return_code, error
 
 
 def parse_module_from_command(args: list[str]) -> tuple[str | None, list[str]]:
@@ -449,6 +455,8 @@ class CourseGUI:
             self.log(f"Return code: {return_code}")
         if error:
             self.log(f"[Ошибка] Не удалось запустить команду: {error}")
+        if (return_code is not None and return_code != 0) and (not stdout.strip()) and (not stderr.strip()):
+            self.log("[Диагностика] Команда завершилась с ошибкой, но не вернула stderr/stdout.")
 
         success = (return_code == 0) and (error is None)
         if success:
