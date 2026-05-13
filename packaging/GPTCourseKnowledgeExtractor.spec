@@ -1,14 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules
+
+_SPEC_PATH = Path(globals().get("__file__", SPEC)).resolve()
+PROJECT_ROOT = _SPEC_PATH.parent.parent
 
 hiddenimports = collect_submodules("src")
 
-datas = [("config", "config")]
+datas = [(str(PROJECT_ROOT / "config"), "config")]
 
 a = Analysis(
-    ["src/gui_app.py"],
-    pathex=["."],
+    [str(PROJECT_ROOT / "src" / "gui_app.py")],
+    pathex=[str(PROJECT_ROOT)],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,

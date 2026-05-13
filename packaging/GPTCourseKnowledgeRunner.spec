@@ -1,12 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules
+
+_SPEC_PATH = Path(globals().get("__file__", SPEC)).resolve()
+PROJECT_ROOT = _SPEC_PATH.parent.parent
 
 hiddenimports = collect_submodules("src")
 
 a = Analysis(
-    ["src/frozen_module_runner.py"],
-    pathex=["."],
+    [str(PROJECT_ROOT / "src" / "frozen_module_runner.py")],
+    pathex=[str(PROJECT_ROOT)],
     binaries=[],
     datas=[],
     hiddenimports=hiddenimports,
