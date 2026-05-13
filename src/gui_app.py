@@ -8,9 +8,12 @@ Wraps existing course commands without calling the OpenAI API.
 
 import os
 import subprocess
-import tempfile
 import threading
 import webbrowser
+import contextlib
+import io
+import runpy
+import sys
 from pathlib import Path
 from typing import Literal
 import tkinter as tk
@@ -37,6 +40,45 @@ def get_subprocess_startup_kwargs() -> dict:
         "startupinfo": startupinfo,
         "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0),
     }
+
+
+def run_module_in_process(module_name: str, module_args: list[str]) -> tuple[str, str, int | None, str | None]:
+    stdout_stream = io.StringIO()
+    stderr_stream = io.StringIO()
+    original_argv = sys.argv[:]
+    return_code: int | None = 0
+    error: str | None = None
+
+    try:
+        sys.argv = [module_name, *module_args]
+        with contextlib.redirect_stdout(stdout_stream), contextlib.redirect_stderr(stderr_stream):
+            try:
+                runpy.run_module(module_name, run_name="__main__")
+            except SystemExit as exc:
+                code = exc.code
+                if isinstance(code, int):
+                    return_code = code
+                elif code is None:
+                    return_code = 0
+                else:
+                    print(str(code), file=sys.stderr)
+                    return_code = 1
+            except Exception as exc:
+                return_code = 1
+                error = str(exc)
+                print(f"Error: failed to execute module '{module_name}': {exc}", file=sys.stderr)
+    finally:
+        sys.argv = original_argv
+
+    return stdout_stream.getvalue(), stderr_stream.getvalue(), return_code, error
+
+
+def parse_module_from_command(args: list[str]) -> tuple[str | None, list[str]]:
+    if len(args) < 2:
+        return None, []
+    if len(args) >= 3 and args[1] == "-m":
+        return args[2], args[3:]
+    return args[1], args[2:]
 
 
 class CourseGUI:
@@ -346,25 +388,13 @@ class CourseGUI:
                 env = os.environ.copy()
                 env["PYTHONIOENCODING"] = "utf-8"
                 env["PYTHONUTF8"] = "1"
-                startup_kwargs = get_subprocess_startup_kwargs()
                 if is_frozen():
-                    with tempfile.TemporaryDirectory(prefix="gptcke_") as temp_dir:
-                        stdout_path = Path(temp_dir) / "stdout.log"
-                        stderr_path = Path(temp_dir) / "stderr.log"
-                        env["GPTCKE_STDOUT_FILE"] = str(stdout_path)
-                        env["GPTCKE_STDERR_FILE"] = str(stderr_path)
-
-                        result = subprocess.run(
-                            args,
-                            env=env,
-                            text=True,
-                            encoding="utf-8",
-                            errors="replace",
-                            **startup_kwargs,
-                        )
-                        stdout = stdout_path.read_text(encoding="utf-8", errors="replace") if stdout_path.exists() else ""
-                        stderr = stderr_path.read_text(encoding="utf-8", errors="replace") if stderr_path.exists() else ""
+                    module_name, module_args = parse_module_from_command(args)
+                    if not module_name:
+                        raise RuntimeError("Cannot parse module name from command arguments.")
+                    stdout, stderr, return_code, error = run_module_in_process(module_name, module_args)
                 else:
+                    startup_kwargs = get_subprocess_startup_kwargs()
                     result = subprocess.run(
                         args,
                         env=env,
@@ -376,8 +406,8 @@ class CourseGUI:
                     )
                     stdout = result.stdout or ""
                     stderr = result.stderr or ""
-                return_code = result.returncode
-                error = None
+                    return_code = result.returncode
+                    error = None
             except Exception as exc:
                 stdout = ""
                 stderr = ""
