@@ -11,13 +11,18 @@ import subprocess
 import threading
 import webbrowser
 from pathlib import Path
+from typing import Literal
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
 try:
     from src.runtime_environment import build_module_command, ensure_app_cwd
+    from src.extract_audio import discover_video_files as discover_video_files_impl
+    from src.utils.supported_formats import is_supported_audio_file
 except ModuleNotFoundError:
     from runtime_environment import build_module_command, ensure_app_cwd
+    from extract_audio import discover_video_files as discover_video_files_impl
+    from utils.supported_formats import is_supported_audio_file
 
 
 class CourseGUI:
@@ -620,15 +625,98 @@ class CourseGUI:
             self.log(f"[Ошибка] Не удалось открыть папку: {exc}")
             messagebox.showerror("Ошибка", "Не удалось открыть папку obsidian_export.")
 
+    def get_course_video_dir(self, slug: str) -> Path:
+        return Path("courses") / slug / "input" / "video"
+
+    def get_course_audio_dir(self, slug: str) -> Path:
+        return Path("courses") / slug / "input" / "audio"
+
+    def discover_video_files(self, folder: Path) -> list[Path]:
+        return discover_video_files_impl(folder, recursive=False)
+
+    def discover_audio_files(self, folder: Path) -> list[Path]:
+        files = [p for p in folder.glob("*") if p.is_file() and is_supported_audio_file(p)]
+        files.sort(key=lambda p: str(p).lower())
+        return files
+
+    def is_relative_to_safe(self, path: Path, parent: Path) -> bool:
+        try:
+            path.resolve().relative_to(parent.resolve())
+            return True
+        except ValueError:
+            return False
+
+    def ask_process_scope(self, kind: str, count: int) -> Literal["all", "one", "cancel"]:
+        title = "\u0418\u0437\u0432\u043b\u0435\u0447\u0435\u043d\u0438\u0435 \u0430\u0443\u0434\u0438\u043e" if kind == "video" else "\u0422\u0440\u0430\u043d\u0441\u043a\u0440\u0438\u0431\u0430\u0446\u0438\u044f"
+        kind_label = "\u0432\u0438\u0434\u0435\u043e\u0444\u0430\u0439\u043b\u043e\u0432" if kind == "video" else "\u0430\u0443\u0434\u0438\u043e\u0444\u0430\u0439\u043b\u043e\u0432"
+        answer = messagebox.askyesnocancel(
+            title,
+            f"\u041d\u0430\u0439\u0434\u0435\u043d\u043e {kind_label}: {count}.\n\n\u0414\u0430 - \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u0430\u0442\u044c \u0432\u0441\u0435 \u0444\u0430\u0439\u043b\u044b.\n\u041d\u0435\u0442 - \u0432\u044b\u0431\u0440\u0430\u0442\u044c \u043e\u0434\u0438\u043d \u0444\u0430\u0439\u043b.\n\u041e\u0442\u043c\u0435\u043d\u0430 - \u043e\u0442\u043c\u0435\u043d\u0438\u0442\u044c.",
+        )
+        if answer is True:
+            return "all"
+        if answer is False:
+            return "one"
+        return "cancel"
+
     def transcribe(self) -> None:
         slug = self.get_slug()
         if not slug:
             return
 
-        if not self.prepare_action("Запуск транскрибации курса...", is_transcribe=True):
+        audio_dir = self.get_course_audio_dir(slug)
+        if not audio_dir.is_dir():
+            messagebox.showwarning(
+                "Папка не найдена",
+                "Папка input/audio не найдена. Сначала добавьте MP3/audio или выполните 'Извлечь аудио'.",
+            )
             return
 
-        args = build_module_command("src.course_transcribe", slug, "--overwrite")
+        audio_files = self.discover_audio_files(audio_dir)
+        if not audio_files:
+            messagebox.showwarning(
+                "Нет файлов",
+                "В папке input/audio нет поддерживаемых аудиофайлов.",
+            )
+            return
+
+        scope = self.ask_process_scope("audio", len(audio_files))
+        if scope == "cancel":
+            return
+
+        selected_path: Path | None = None
+        if scope == "all":
+            start_message = "Запуск транскрибации всех аудиофайлов..."
+        else:
+            selected = filedialog.askopenfilename(
+                title="Выберите аудиофайл",
+                initialdir=str(audio_dir.resolve()),
+                filetypes=[
+                    ("Audio files", "*.mp3 *.wav *.m4a *.flac *.ogg *.aac *.wma"),
+                    ("All files", "*.*"),
+                ],
+            )
+            if not selected:
+                return
+            selected_path = Path(selected)
+            if not self.is_relative_to_safe(selected_path, audio_dir) or not (
+                selected_path.is_file() and is_supported_audio_file(selected_path)
+            ):
+                messagebox.showwarning(
+                    "Некорректный файл",
+                    "Можно выбрать только поддерживаемый аудиофайл внутри input/audio.",
+                )
+                return
+            start_message = f"Запуск транскрибации файла: {selected_path.name}"
+
+        if not self.prepare_action(start_message, is_transcribe=True):
+            return
+
+        args = build_module_command("src.course_transcribe", slug)
+        if selected_path is not None:
+            args.extend(["--file", str(selected_path)])
+            self.log(f"Выбранный файл: {selected_path}")
+        args.append("--overwrite")
         self.run_command_async(args, "Транскрибация завершена.", "Не удалось выполнить транскрибацию.")
 
     def extract_audio(self) -> None:
@@ -636,10 +724,57 @@ class CourseGUI:
         if not slug:
             return
 
-        if not self.prepare_action("Запуск извлечения аудио из видео..."):
+        video_dir = self.get_course_video_dir(slug)
+        if not video_dir.is_dir():
+            messagebox.showwarning(
+                "Папка не найдена",
+                "Папка input/video не найдена. Сначала откройте папку курса и поместите видео в input/video.",
+            )
             return
 
-        args = build_module_command("src.course_extract_audio", slug, "--overwrite")
+        video_files = self.discover_video_files(video_dir)
+        if not video_files:
+            messagebox.showwarning(
+                "Нет файлов",
+                "В папке input/video нет поддерживаемых видеофайлов.",
+            )
+            return
+
+        scope = self.ask_process_scope("video", len(video_files))
+        if scope == "cancel":
+            return
+
+        selected_path: Path | None = None
+        if scope == "all":
+            start_message = "Запуск извлечения аудио для всех видео..."
+        else:
+            selected = filedialog.askopenfilename(
+                title="Выберите видеофайл",
+                initialdir=str(video_dir.resolve()),
+                filetypes=[
+                    ("Video files", "*.mp4 *.mkv *.mov *.avi *.webm *.wmv *.flv"),
+                    ("All files", "*.*"),
+                ],
+            )
+            if not selected:
+                return
+            selected_path = Path(selected)
+            if not self.is_relative_to_safe(selected_path, video_dir) or not discover_video_files_impl(selected_path):
+                messagebox.showwarning(
+                    "Некорректный файл",
+                    "Можно выбрать только поддерживаемый видеофайл внутри input/video.",
+                )
+                return
+            start_message = f"Запуск извлечения аудио для файла: {selected_path.name}"
+
+        if not self.prepare_action(start_message):
+            return
+
+        args = build_module_command("src.course_extract_audio", slug)
+        if selected_path is not None:
+            args.extend(["--file", str(selected_path)])
+            self.log(f"Выбранный файл: {selected_path}")
+        args.append("--overwrite")
         self.run_command_async(args, "Извлечение аудио завершено.", "Не удалось извлечь аудио из видео.")
 
     def cleanup(self) -> None:

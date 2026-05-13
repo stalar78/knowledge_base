@@ -39,6 +39,27 @@ except ModuleNotFoundError:
     from transcription_engine import transcribe_file
 
 
+def resolve_audio_file_arg(file_arg: str, input_audio_dir: Path) -> Path:
+    candidate = Path(file_arg)
+    if not candidate.is_absolute():
+        candidate = input_audio_dir / candidate
+    candidate = candidate.resolve()
+    input_audio_dir_resolved = input_audio_dir.resolve()
+
+    try:
+        candidate.relative_to(input_audio_dir_resolved)
+    except ValueError:
+        raise ValueError(
+            f"Selected file must be inside course input/audio folder: {input_audio_dir_resolved}"
+        )
+
+    if not candidate.is_file():
+        raise ValueError(f"File does not exist: {candidate}")
+    if not is_supported_audio_file(candidate):
+        raise ValueError(f"Unsupported audio file: {candidate}")
+    return candidate
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Transcribe all audio/video files in a course's input/audio folder.",
@@ -83,6 +104,10 @@ def main() -> None:
         action="store_true",
         help="Scan subfolders of input/audio recursively.",
     )
+    parser.add_argument(
+        "--file",
+        help="Single audio file to process (path relative to input/audio or full path inside it).",
+    )
 
     args = parser.parse_args()
 
@@ -100,17 +125,25 @@ def main() -> None:
         sys.exit(0)
 
     # 3. Discover supported files
-    pattern = "**/*" if args.recursive else "*"
-    discovered = []
-    for ext in SUPPORTED_AUDIO_EXTENSIONS:
-        discovered.extend(input_audio_dir.glob(f"{pattern}{ext}"))
+    if args.file:
+        try:
+            selected_file = resolve_audio_file_arg(args.file, input_audio_dir)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        supported_files = [selected_file]
+    else:
+        pattern = "**/*" if args.recursive else "*"
+        discovered = []
+        for ext in SUPPORTED_AUDIO_EXTENSIONS:
+            discovered.extend(input_audio_dir.glob(f"{pattern}{ext}"))
 
-    # Filter out directories and ensure they are supported files
-    supported_files = [
-        f for f in discovered
-        if f.is_file() and is_supported_audio_file(f)
-    ]
-    supported_files.sort(key=lambda p: str(p).lower())
+        # Filter out directories and ensure they are supported files
+        supported_files = [
+            f for f in discovered
+            if f.is_file() and is_supported_audio_file(f)
+        ]
+        supported_files.sort(key=lambda p: str(p).lower())
 
     if not supported_files:
         print(f"No supported audio/video files found in '{input_audio_dir}'.")
