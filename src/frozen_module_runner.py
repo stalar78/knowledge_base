@@ -8,11 +8,42 @@ Usage:
 
 from __future__ import annotations
 
+import contextlib
+import os
 import runpy
 import sys
 
 
 def main() -> None:
+    stdout_path = os.environ.get("GPTCKE_STDOUT_FILE")
+    stderr_path = os.environ.get("GPTCKE_STDERR_FILE")
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+
+    with contextlib.ExitStack() as stack:
+        if stdout_path:
+            stdout_file = stack.enter_context(open(stdout_path, "w", encoding="utf-8", errors="replace"))
+            sys.stdout = stdout_file
+        if stderr_path:
+            stderr_file = stack.enter_context(open(stderr_path, "w", encoding="utf-8", errors="replace"))
+            sys.stderr = stderr_file
+
+        try:
+            _run_main()
+        finally:
+            try:
+                sys.stdout.flush()
+            except Exception:
+                pass
+            try:
+                sys.stderr.flush()
+            except Exception:
+                pass
+            sys.stdout = original_stdout
+            sys.stderr = original_stderr
+
+
+def _run_main() -> None:
     if len(sys.argv) < 2:
         print(
             "Error: module name is required.\n"

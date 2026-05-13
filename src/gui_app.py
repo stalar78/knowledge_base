@@ -8,6 +8,7 @@ Wraps existing course commands without calling the OpenAI API.
 
 import os
 import subprocess
+import tempfile
 import threading
 import webbrowser
 from pathlib import Path
@@ -16,11 +17,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
 try:
-    from src.runtime_environment import build_module_command, ensure_app_cwd
+    from src.runtime_environment import build_module_command, ensure_app_cwd, is_frozen
     from src.extract_audio import discover_video_files as discover_video_files_impl
     from src.utils.supported_formats import is_supported_audio_file
 except ModuleNotFoundError:
-    from runtime_environment import build_module_command, ensure_app_cwd
+    from runtime_environment import build_module_command, ensure_app_cwd, is_frozen
     from extract_audio import discover_video_files as discover_video_files_impl
     from utils.supported_formats import is_supported_audio_file
 
@@ -346,17 +347,35 @@ class CourseGUI:
                 env["PYTHONIOENCODING"] = "utf-8"
                 env["PYTHONUTF8"] = "1"
                 startup_kwargs = get_subprocess_startup_kwargs()
-                result = subprocess.run(
-                    args,
-                    env=env,
-                    capture_output=True,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    **startup_kwargs,
-                )
-                stdout = result.stdout or ""
-                stderr = result.stderr or ""
+                if is_frozen():
+                    with tempfile.TemporaryDirectory(prefix="gptcke_") as temp_dir:
+                        stdout_path = Path(temp_dir) / "stdout.log"
+                        stderr_path = Path(temp_dir) / "stderr.log"
+                        env["GPTCKE_STDOUT_FILE"] = str(stdout_path)
+                        env["GPTCKE_STDERR_FILE"] = str(stderr_path)
+
+                        result = subprocess.run(
+                            args,
+                            env=env,
+                            text=True,
+                            encoding="utf-8",
+                            errors="replace",
+                            **startup_kwargs,
+                        )
+                        stdout = stdout_path.read_text(encoding="utf-8", errors="replace") if stdout_path.exists() else ""
+                        stderr = stderr_path.read_text(encoding="utf-8", errors="replace") if stderr_path.exists() else ""
+                else:
+                    result = subprocess.run(
+                        args,
+                        env=env,
+                        capture_output=True,
+                        text=True,
+                        encoding="utf-8",
+                        errors="replace",
+                        **startup_kwargs,
+                    )
+                    stdout = result.stdout or ""
+                    stderr = result.stderr or ""
                 return_code = result.returncode
                 error = None
             except Exception as exc:
