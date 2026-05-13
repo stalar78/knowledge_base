@@ -4,9 +4,17 @@ setlocal EnableExtensions EnableDelayedExpansion
 set "SCRIPT_DIR=%~dp0"
 pushd "%SCRIPT_DIR%.."
 set "PROJECT_ROOT=%CD%"
+set "APP_VERSION="
+for /f "usebackq delims=" %%V in (`python -c "from src.version import APP_VERSION; print(APP_VERSION)" 2^>nul`) do set "APP_VERSION=%%V"
+if "%APP_VERSION%"=="" (
+  echo [ERROR] Failed to read APP_VERSION from src\version.py
+  popd
+  exit /b 1
+)
 set "PYI_DIST=%PROJECT_ROOT%\dist\_pyinstaller"
 set "FINAL_DIST=%PROJECT_ROOT%\dist\GPTCourseKnowledgeExtractor"
-set "ZIP_PATH=%PROJECT_ROOT%\dist\GPTCourseKnowledgeExtractor-portable.zip"
+set "ZIP_PATH=%PROJECT_ROOT%\dist\GPTCourseKnowledgeExtractor-v%APP_VERSION%-portable.zip"
+set "OLD_ZIP_PATH=%PROJECT_ROOT%\dist\GPTCourseKnowledgeExtractor-portable.zip"
 set "RUNNER_RAW_DIR=%PYI_DIST%\GPTCourseKnowledgeRunner"
 set "GUI_RAW_DIR=%PYI_DIST%\GPTCourseKnowledgeExtractor"
 set "RUNNER_RAW_EXE=%RUNNER_RAW_DIR%\GPTCourseKnowledgeRunner.exe"
@@ -14,6 +22,7 @@ set "GUI_RAW_EXE=%GUI_RAW_DIR%\GPTCourseKnowledgeExtractor.exe"
 set "TEMPLATES_DIR=%PROJECT_ROOT%\packaging\templates"
 
 echo [INFO] Project root: %PROJECT_ROOT%
+echo [INFO] App version: %APP_VERSION%
 echo [INFO] Raw PyInstaller dist: %PYI_DIST%
 echo [INFO] Final portable dist: %FINAL_DIST%
 
@@ -29,6 +38,7 @@ if exist "%PYI_DIST%" rmdir /s /q "%PYI_DIST%"
 if exist "%PROJECT_ROOT%\build\pyinstaller" rmdir /s /q "%PROJECT_ROOT%\build\pyinstaller"
 if exist "%FINAL_DIST%" rmdir /s /q "%FINAL_DIST%"
 if exist "%ZIP_PATH%" del /f /q "%ZIP_PATH%"
+if exist "%OLD_ZIP_PATH%" del /f /q "%OLD_ZIP_PATH%"
 
 echo [INFO] Building GPTCourseKnowledgeRunner...
 python -m PyInstaller --noconfirm --distpath "%PYI_DIST%" "%PROJECT_ROOT%\packaging\GPTCourseKnowledgeRunner.spec"

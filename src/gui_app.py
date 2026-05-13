@@ -23,10 +23,12 @@ try:
     from src.runtime_environment import build_module_command, ensure_app_cwd, is_frozen
     from src.extract_audio import discover_video_files as discover_video_files_impl
     from src.utils.supported_formats import is_supported_audio_file
+    from src.version import APP_DISPLAY_NAME
 except ModuleNotFoundError:
     from runtime_environment import build_module_command, ensure_app_cwd, is_frozen
     from extract_audio import discover_video_files as discover_video_files_impl
     from utils.supported_formats import is_supported_audio_file
+    from version import APP_DISPLAY_NAME
 
 
 def get_subprocess_startup_kwargs() -> dict:
@@ -84,7 +86,7 @@ def parse_module_from_command(args: list[str]) -> tuple[str | None, list[str]]:
 class CourseGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("GPT Course Knowledge Extractor")
+        self.root.title(APP_DISPLAY_NAME)
         self.root.geometry("1200x820")
         self.root.minsize(1050, 720)
 
