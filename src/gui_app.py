@@ -25,6 +25,19 @@ except ModuleNotFoundError:
     from utils.supported_formats import is_supported_audio_file
 
 
+def get_subprocess_startup_kwargs() -> dict:
+    if os.name != "nt":
+        return {}
+
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = 0
+    return {
+        "startupinfo": startupinfo,
+        "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    }
+
+
 class CourseGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -332,6 +345,7 @@ class CourseGUI:
                 env = os.environ.copy()
                 env["PYTHONIOENCODING"] = "utf-8"
                 env["PYTHONUTF8"] = "1"
+                startup_kwargs = get_subprocess_startup_kwargs()
                 result = subprocess.run(
                     args,
                     env=env,
@@ -339,6 +353,7 @@ class CourseGUI:
                     text=True,
                     encoding="utf-8",
                     errors="replace",
+                    **startup_kwargs,
                 )
                 stdout = result.stdout or ""
                 stderr = result.stderr or ""
